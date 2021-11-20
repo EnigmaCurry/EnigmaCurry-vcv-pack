@@ -16,7 +16,7 @@
     {
       "slug": "Transport",
       "name": "Transport",
-      "description": "A DAW-like transport for play/pause/record",
+      "description": "A DAW-like transport for play/stop/record",
       "tags": [
         "utility"
       ]

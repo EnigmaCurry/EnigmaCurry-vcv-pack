@@ -16,6 +16,7 @@ struct Transport : Module {
   double recordLength;
   bool bypassRecordLength;
   int playCount;
+  int recCount;
   bool playing;
   bool armed;
   int armQuantize;
@@ -27,7 +28,7 @@ struct Transport : Module {
 
   Transport() {
     config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-    configParam(Transport::LEN, 0, 256, 32, "Record Length");
+    configParam(Transport::LEN, 0, 128, 32, "Record Length");
     configParam(TAP_LEN, 0.f, 1.f, 0.f, "Bypass record length");
     configParam(TAP_PLAY, 0.f, 1.f, 0.f, "Tap to play");
     configParam(TAP_ARM, 0.f, 1.f, 0.f, "Tap to arm record");
@@ -73,6 +74,7 @@ struct Transport : Module {
     if (playing && clockTrigger.process(inputs[CLK].getNormalVoltage(0.0))) {
       if (bypassRecordLength || recordLength == 0 || playCount < recordLength) {
         playCount++;
+        recCount += armed ? 1 : 0;
       } else {
         resetPulse.trigger(TRIGGER_DURATION);
         reset();
@@ -88,6 +90,9 @@ struct Transport : Module {
       reset();
     }
 
+    if (!armed)
+      recCount = 0;
+
     blinkPhase += args.sampleTime * 2;
     if (blinkPhase >= 1.f)
       blinkPhase -= 1.f;
@@ -102,6 +107,7 @@ struct Transport : Module {
       lights[TAP_ARM_LIGHT].setBrightness(armed);
     }
 
+    std::cout << args.sampleTime << std::endl;
     outputs[PTRG].setVoltage(playPulse.process(args.sampleTime) ? 10.f : 0.f);
     outputs[RTRG].setVoltage(recordPulse.process(args.sampleTime) ? 10.f : 0.f);
     outputs[RST].setVoltage(resetPulse.process(args.sampleTime) ? 10.f : 0.f);
@@ -109,7 +115,8 @@ struct Transport : Module {
 
   void reset(bool init) {
     playCount = 0;
-    if (playing) {
+    recCount = 0;
+    if (playing && !init) {
       playPulse.trigger(TRIGGER_DURATION);
       resetPulse.trigger(TRIGGER_DURATION);
     }
@@ -174,7 +181,7 @@ struct TransportDisplay : public DynamicOverlay {
     if (num > 999)
       return "XXX";
     else if (num == 0)
-      return "";
+      return "___";
     std::string s = std::to_string(num);
     if (s.length() < 3) {
       s.insert(s.begin(), 3 - s.length(), '_');
@@ -188,13 +195,19 @@ struct TransportDisplay : public DynamicOverlay {
     DynamicOverlay::clear();
     std::string recordLength = pad(module->recordLength);
     std::string playCount = pad(module->playCount);
+    std::string recCount = pad(module->recCount);
 
     addText(recordLength, 25, grid.loc(4, 7).minus(Vec(8, -15)),
             (!module->bypassRecordLength && module->recordLength > 0) ? RED
                                                                       : WHITE,
             CLEAR, DSEG);
-    addText(playCount, 25, grid.loc(8, 7).minus(Vec(8, -15)), GREEN, CLEAR,
-            DSEG);
+    if (module->armed) {
+      addText(recCount, 25, grid.loc(8, 7).minus(Vec(8, -15)), RED, CLEAR,
+              DSEG);
+    } else {
+      addText(playCount, 25, grid.loc(8, 7).minus(Vec(8, -15)), GREEN, CLEAR,
+              DSEG);
+    }
     DynamicOverlay::draw(args);
   }
 };

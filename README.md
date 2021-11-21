@@ -57,4 +57,5 @@ Here is an example patch using these third party modules:
 In this scenario, if you had set CLKD BPM to 120, and Transport Length to 8, and
 you recorded for the entire duration, the recorded .wav file [should be exactly
 16s long](https://toolstud.io/music/bpm.php?bpm=120&bpm_unit=4%2F4) (8 bars * 4
-beats/bar * 500ms = 16s).
+beats/bar * 500ms = 16s). In reality, it records a .wav file that is 15.99s, so
+its not exactly frame accurate, maybe this timing can be improved??

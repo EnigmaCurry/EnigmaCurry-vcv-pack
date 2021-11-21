@@ -21,6 +21,7 @@ struct Transport : Module {
   bool armed;
   int armQuantize;
   bool toFlipArm;
+  bool recordLengthIsPlayLength;
   float blinkPhase = 0.f;
   dsp::SchmittTrigger clockTrigger, playTrigger, armTrigger;
   dsp::BooleanTrigger tapLenTrigger, tapPlayTrigger, tapArmTrigger;
@@ -72,9 +73,13 @@ struct Transport : Module {
     }
     // CLOCK and (clocked) ARM
     if (playing && clockTrigger.process(inputs[CLK].getNormalVoltage(0.0))) {
-      if (bypassRecordLength || recordLength == 0 || playCount < recordLength) {
+      if (!recordLengthIsPlayLength || bypassRecordLength ||
+          recordLength == 0 || playCount < recordLength) {
         playCount++;
         recCount += armed ? 1 : 0;
+        toFlipArm = !bypassRecordLength && recCount == recordLength + 1
+                        ? true
+                        : toFlipArm;
       } else {
         resetPulse.trigger(TRIGGER_DURATION);
         reset();
@@ -129,6 +134,7 @@ struct Transport : Module {
     if (init) {
       armQuantize = 0;
       bypassRecordLength = true;
+      recordLengthIsPlayLength = false;
     }
   }
   void reset() { reset(0); }
@@ -141,6 +147,8 @@ struct Transport : Module {
     json_object_set_new(rootJ, "armed", json_integer((int)armed));
     json_object_set_new(rootJ, "playing", json_integer((int)playing));
     json_object_set_new(rootJ, "armQuantize", json_integer(armQuantize));
+    json_object_set_new(rootJ, "recordLengthIsPlayLength",
+                        json_integer(recordLengthIsPlayLength));
     return rootJ;
   }
 
@@ -155,6 +163,11 @@ struct Transport : Module {
     json_t *playingJ = json_object_get(rootJ, "playing");
     if (armedJ)
       playing = (bool)json_integer_value(playingJ);
+    json_t *recordLengthIsPlayLengthJ =
+        json_object_get(rootJ, "recordLengthIsPlayLength");
+    if (recordLengthIsPlayLengthJ)
+      recordLengthIsPlayLength =
+          (bool)json_integer_value(recordLengthIsPlayLengthJ);
   }
 };
 
@@ -205,7 +218,7 @@ struct TransportDisplay : public DynamicOverlay {
       addText(recCount, 25, grid.loc(8, 7).minus(Vec(8, -15)), RED, CLEAR,
               DSEG);
     } else {
-      addText(playCount, 25, grid.loc(8, 7).minus(Vec(8, -15)), GREEN, CLEAR,
+      addText(playCount, 25, grid.loc(8, 7).minus(Vec(8, -15)), WHITE, CLEAR,
               DSEG);
     }
     DynamicOverlay::draw(args);
@@ -341,6 +354,20 @@ struct TransportWidget : ModuleWidget {
         return menu;
       }
     };
+
+    struct StopOnRecordLengthItem : MenuItem {
+      Transport *module;
+      void onAction(const event::Action &e) override {
+        module->recordLengthIsPlayLength = !module->recordLengthIsPlayLength;
+      }
+    };
+
+    StopOnRecordLengthItem *stopOnRecordLengthItem =
+        createMenuItem<StopOnRecordLengthItem>(
+            "Stop after record length",
+            CHECKMARK(module->recordLengthIsPlayLength));
+    stopOnRecordLengthItem->module = module;
+    menu->addChild(stopOnRecordLengthItem);
 
     QuantizeArmItem *quantizeArmItem =
         createMenuItem<QuantizeArmItem>("Quantize Arming", RIGHT_ARROW);

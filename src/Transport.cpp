@@ -76,30 +76,26 @@ struct Transport : Module {
       if (!recordLengthIsPlayLength || bypassRecordLength ||
           recordLength == 0 || playCount < recordLength) {
         playCount++;
-        toFlipArm = !bypassRecordLength && (recCount == recordLength + 1)
-                        ? true
-                        : toFlipArm;
+        toFlipArm =
+            !bypassRecordLength && (recCount == recordLength + 1 - armQuantize)
+                ? true
+                : toFlipArm;
         recCount += armed ? 1 : 0;
       } else {
         resetPulse.trigger(TRIGGER_DURATION);
         reset();
       }
       if (toFlipArm) {
-        std::cout << "playCount: " << playCount << " recCount: " << recCount
-                  << " toFlipArm: " << toFlipArm << "playCount % armQuantize"
-                  << playCount % armQuantize << std::endl;
         if (armQuantize <= 0 || (playCount - 1) % armQuantize == 0) {
           armed = !armed;
           toFlipArm = false;
+          recCount = armed ? 1 : 0;
           recordPulse.trigger(TRIGGER_DURATION);
         }
       }
     } else if (!playing && !armed) {
       reset();
     }
-
-    if (!armed)
-      recCount = 0;
 
     blinkPhase += args.sampleTime * 2;
     if (blinkPhase >= 1.f)

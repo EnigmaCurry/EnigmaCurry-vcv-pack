@@ -154,20 +154,18 @@ struct Transport : Module {
 
   void dataFromJson(json_t *rootJ) override {
     json_t *bypassJ = json_object_get(rootJ, "bypassRecordLength");
-    if (bypassJ)
-      bypassRecordLength = (bool)json_integer_value(bypassJ);
+    bypassRecordLength = (bool)json_integer_value(bypassJ);
 
     json_t *armedJ = json_object_get(rootJ, "armed");
-    if (armedJ)
-      armed = (bool)json_integer_value(armedJ);
+    armed = (bool)json_integer_value(armedJ);
     json_t *playingJ = json_object_get(rootJ, "playing");
-    if (armedJ)
-      playing = (bool)json_integer_value(playingJ);
+    playing = (bool)json_integer_value(playingJ);
+    json_t *armQuantizeJ = json_object_get(rootJ, "armQuantize");
+    armQuantize = json_integer_value(armQuantizeJ);
     json_t *recordLengthIsPlayLengthJ =
         json_object_get(rootJ, "recordLengthIsPlayLength");
-    if (recordLengthIsPlayLengthJ)
-      recordLengthIsPlayLength =
-          (bool)json_integer_value(recordLengthIsPlayLengthJ);
+    recordLengthIsPlayLength =
+        (bool)json_integer_value(recordLengthIsPlayLengthJ);
   }
 };
 

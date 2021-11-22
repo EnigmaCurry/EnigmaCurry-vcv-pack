@@ -74,12 +74,11 @@ struct Transport : Module {
     // CLOCK and (clocked) ARM
     if (playing && clockTrigger.process(inputs[CLK].getNormalVoltage(0.0))) {
       if (!recordLengthIsPlayLength || bypassRecordLength ||
-          recordLength == 0 || playCount < recordLength) {
+          recordLength == 0 || playCount + 1 < recordLength) {
         playCount++;
         recCount += armed ? 1 : 0;
-        toFlipArm = !bypassRecordLength && recCount == recordLength + 1
-                        ? true
-                        : toFlipArm;
+        toFlipArm =
+            !bypassRecordLength && recCount == recordLength ? true : toFlipArm;
       } else {
         resetPulse.trigger(TRIGGER_DURATION);
         reset();
@@ -112,7 +111,6 @@ struct Transport : Module {
       lights[TAP_ARM_LIGHT].setBrightness(armed);
     }
 
-    std::cout << args.sampleTime << std::endl;
     outputs[PTRG].setVoltage(playPulse.process(args.sampleTime) ? 10.f : 0.f);
     outputs[RTRG].setVoltage(recordPulse.process(args.sampleTime) ? 10.f : 0.f);
     outputs[RST].setVoltage(resetPulse.process(args.sampleTime) ? 10.f : 0.f);
@@ -126,7 +124,6 @@ struct Transport : Module {
       resetPulse.trigger(TRIGGER_DURATION);
     }
     playing = false;
-
     if (armed)
       recordPulse.trigger(TRIGGER_DURATION);
     armed = false;
@@ -205,8 +202,8 @@ struct TransportDisplay : public DynamicOverlay {
       return;
     DynamicOverlay::clear();
     std::string recordLength = pad(module->recordLength);
-    std::string playCount = pad(module->playCount);
-    std::string recCount = pad(module->recCount);
+    std::string playCount = pad(module->playCount + 1);
+    std::string recCount = pad(module->recCount + 1);
 
     addText(recordLength, 25, grid.loc(4, 7).minus(Vec(8, -15)),
             (!module->bypassRecordLength && module->recordLength > 0) ? RED

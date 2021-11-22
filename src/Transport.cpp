@@ -74,17 +74,21 @@ struct Transport : Module {
     // CLOCK and (clocked) ARM
     if (playing && clockTrigger.process(inputs[CLK].getNormalVoltage(0.0))) {
       if (!recordLengthIsPlayLength || bypassRecordLength ||
-          recordLength == 0 || playCount + 1 < recordLength) {
+          recordLength == 0 || playCount < recordLength) {
         playCount++;
+        toFlipArm = !bypassRecordLength && (recCount == recordLength + 1)
+                        ? true
+                        : toFlipArm;
         recCount += armed ? 1 : 0;
-        toFlipArm =
-            !bypassRecordLength && recCount == recordLength ? true : toFlipArm;
       } else {
         resetPulse.trigger(TRIGGER_DURATION);
         reset();
       }
       if (toFlipArm) {
-        if (armQuantize <= 0 || playCount % armQuantize == 0) {
+        std::cout << "playCount: " << playCount << " recCount: " << recCount
+                  << " toFlipArm: " << toFlipArm << "playCount % armQuantize"
+                  << playCount % armQuantize << std::endl;
+        if (armQuantize <= 0 || (playCount - 1) % armQuantize == 0) {
           armed = !armed;
           toFlipArm = false;
           recordPulse.trigger(TRIGGER_DURATION);
@@ -202,8 +206,8 @@ struct TransportDisplay : public DynamicOverlay {
       return;
     DynamicOverlay::clear();
     std::string recordLength = pad(module->recordLength);
-    std::string playCount = pad(module->playCount + 1);
-    std::string recCount = pad(module->recCount + 1);
+    std::string playCount = pad(module->playCount);
+    std::string recCount = pad(module->recCount);
 
     addText(recordLength, 25, grid.loc(4, 7).minus(Vec(8, -15)),
             (!module->bypassRecordLength && module->recordLength > 0) ? RED

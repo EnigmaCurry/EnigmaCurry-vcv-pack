@@ -19,7 +19,7 @@ struct Transport : Module {
   int recCount = 0;
   bool playing = false;
   bool armed = false;
-  int armQuantize = 0;
+  int armQuantize = 1;
   bool toFlipArm = false;
   bool recordLengthIsPlayLength = false;
   float blinkPhase = 0.f;
@@ -74,7 +74,7 @@ struct Transport : Module {
     // CLOCK and (clocked) ARM
     if (playing && clockTrigger.process(inputs[CLK].getNormalVoltage(0.0))) {
       if (!recordLengthIsPlayLength || bypassRecordLength ||
-          recordLength == 0 || playCount < recordLength) {
+          recordLength == 0 || recCount < recordLength) {
         playCount++;
         toFlipArm =
             !bypassRecordLength && (recCount == recordLength + 1 - armQuantize)
@@ -129,7 +129,7 @@ struct Transport : Module {
     armed = false;
     toFlipArm = false;
     if (init) {
-      armQuantize = 0;
+      armQuantize = 1;
       bypassRecordLength = true;
       recordLengthIsPlayLength = false;
     }

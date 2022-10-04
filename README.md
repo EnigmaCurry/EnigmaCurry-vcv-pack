@@ -89,3 +89,40 @@ long](https://toolstud.io/music/bpm.php?bpm=120&bpm_unit=4%2F4) (8
 bars * 4 beats/bar * 500ms = 16s). In reality, it records a .wav file
 that is 15.99s, so its not exactly frame accurate, maybe this timing
 can be improved??
+
+## Latch
+
+Latch contains two (2) polyphonic flip-flop latching gates with discrete trigger
+and reset inputs.
+
+![Latch](screenshots/Latch.png)
+
+Here is an example problem that Latch helpfully solves:
+
+Impromptu Modular's CLOCKED module has a `RUN` output that outputs a
+trigger when the clock is started AND when stopped (a toggle). If you
+instead wish to have a single gate that is high when playing and low
+when stopped, and you also want discrete play and stop buttons (not a
+toggle), you can use Latch:
+
+![Latch Patch](screenshots/LatchPatch.png)
+
+ * Connect a trigger button to the first `TRIG` input of Latch.
+ * Connect a different trigger button to the `RESET` input of Latch.
+   In parallel, connect this same trigger button to the `RESET` input
+   of CLOCKED.
+ * Connect the `LATCH` output of Latch to the `RUN` input of CLOCKED.
+   Right click CLOCKED and select `Run input CV is level sensitive`.
+   The same `LATCH` output can be used as a "Play mode gate" elsewhere
+   in your patch (attached to the scope for example).
+ * Press the first trigger button to start the clock. Additional
+   presses will not do anything if the latch is already high.
+ * Press the second trigger button to stop/reset the clock. Additional
+   presses will not do anything to Latch if the latch is already low
+   (but will still reset CLOCKED again because its connected
+   directly).
+ * This example only uses the top section of Latch, and only with a
+   single monophonic Latch output. You may connect up to 16 polyphonic
+   trigger+reset inputs and 16 latch outputs per section, for a total
+   of 32 latches if you use both sections. Use the Merge and Split
+   (VCV Fundamental) devices to use polyphony.

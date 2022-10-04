@@ -5,7 +5,6 @@
 #include "components.hpp"
 #include "plugin.hpp"
 #include <string>
-
 #define TRIGGER_DURATION 1e-3f
 
 struct Transport : Module {
@@ -166,18 +165,10 @@ struct Transport : Module {
   }
 };
 
-NVGcolor RED = nvgRGBA(0xff, 0x00, 0x00, 0xff);
-NVGcolor GREEN = nvgRGBA(0x00, 0xff, 0x00, 0xff);
-NVGcolor WHITE = nvgRGBA(0xff, 0xff, 0xff, 0xff);
-NVGcolor RED_TRANSPARENT = nvgRGBA(0xff, 0x00, 0x22, 0x50);
-NVGcolor BLACK = nvgRGBA(0x00, 0x00, 0x00, 0xff);
-NVGcolor BLACK_TRANSPARENT = nvgRGBA(0x00, 0x00, 0x00, 0x77);
-NVGcolor CLEAR = nvgRGBA(0x00, 0x00, 0x00, 0x00);
-
 #define HP 10
 #define ROWS 24
 #define COLUMNS 10
-panel_grid<HP, ROWS, COLUMNS> grid;
+panel_grid<HP, ROWS, COLUMNS> transportGrid;
 
 struct TransportDisplay : public DynamicOverlay {
   using DynamicOverlay::DynamicOverlay;
@@ -205,15 +196,15 @@ struct TransportDisplay : public DynamicOverlay {
     std::string playCount = pad(module->playCount);
     std::string recCount = pad(module->recCount);
 
-    addText(recordLength, 25, grid.loc(4, 7).minus(Vec(8, -15)),
+    addText(recordLength, 25, transportGrid.loc(4, 7).minus(Vec(8, -15)),
             (!module->bypassRecordLength && module->recordLength > 0) ? RED
                                                                       : WHITE,
             CLEAR, DSEG);
     if (module->armed) {
-      addText(recCount, 25, grid.loc(8, 7).minus(Vec(8, -15)), RED, CLEAR,
+      addText(recCount, 25, transportGrid.loc(8, 7).minus(Vec(8, -15)), RED, CLEAR,
               DSEG);
     } else {
-      addText(playCount, 25, grid.loc(8, 7).minus(Vec(8, -15)), WHITE, CLEAR,
+      addText(playCount, 25, transportGrid.loc(8, 7).minus(Vec(8, -15)), WHITE, CLEAR,
               DSEG);
     }
     DynamicOverlay::draw(args);
@@ -226,20 +217,20 @@ struct TransportWidget : ModuleWidget {
     setPanel(
         APP->window->loadSvg(asset::plugin(pluginInstance, "res/10hp.svg")));
 
-    Vec lenLoc = grid.loc(4, 1);
-    Vec tapLenLoc = grid.loc(4, 3);
-    Vec clkLoc = grid.loc(8, 1);
-    Vec rstLoc = grid.loc(8, 3);
-    Vec playLoc = grid.loc(12, 1);
-    Vec tapPlayLoc = grid.loc(12, 3);
-    Vec pgatLoc = grid.loc(12, 6);
-    Vec ptrgLoc = grid.loc(12, 8);
-    Vec armRecLoc = grid.loc(16, 1);
-    Vec tapArmLoc = grid.loc(16, 3);
-    Vec rgatLoc = grid.loc(16, 6);
-    Vec rtrgLoc = grid.loc(16, 8);
-    Vec lengthDisplayLoc = grid.loc(4, 7);
-    Vec playLengthDisplayLoc = grid.loc(8, 7);
+    Vec lenLoc = transportGrid.loc(4, 1);
+    Vec tapLenLoc = transportGrid.loc(4, 3);
+    Vec clkLoc = transportGrid.loc(8, 1);
+    Vec rstLoc = transportGrid.loc(8, 3);
+    Vec playLoc = transportGrid.loc(12, 1);
+    Vec tapPlayLoc = transportGrid.loc(12, 3);
+    Vec pgatLoc = transportGrid.loc(12, 6);
+    Vec ptrgLoc = transportGrid.loc(12, 8);
+    Vec armRecLoc = transportGrid.loc(16, 1);
+    Vec tapArmLoc = transportGrid.loc(16, 3);
+    Vec rgatLoc = transportGrid.loc(16, 6);
+    Vec rtrgLoc = transportGrid.loc(16, 8);
+    Vec lengthDisplayLoc = transportGrid.loc(4, 7);
+    Vec playLengthDisplayLoc = transportGrid.loc(8, 7);
 
     addParam(
         createParamCentered<RoundBlackKnob>(lenLoc, module, Transport::LEN));

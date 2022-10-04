@@ -6,6 +6,14 @@
 #define HEIGHT 128.5
 #define HP_UNIT 5.08
 
+extern NVGcolor RED;
+extern NVGcolor GREEN;
+extern NVGcolor WHITE;
+extern NVGcolor RED_TRANSPARENT;
+extern NVGcolor BLACK;
+extern NVGcolor BLACK_TRANSPARENT;
+extern NVGcolor CLEAR;
+
 enum fonts { MANROPE, DSEG, FANTASQUE };
 
 template <int HP, int ROWS, int COLUMNS> struct panel_grid {

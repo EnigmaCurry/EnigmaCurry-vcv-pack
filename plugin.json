@@ -1,25 +1,33 @@
 {
-  "slug": "EnigmaCurry-vcv-pack",
-  "name": "EnigmaCurry",
-  "version": "2.0.0",
-  "license": "MIT",
-  "brand": "EnigmaCurry",
-  "author": "EnigmaCurry",
-  "authorEmail": "ryan@rymcg.tech",
-  "authorUrl": "https://www.enigmacurry.com",
-  "pluginUrl": "https://github.com/EnigmaCurry/vcv-pack",
-  "manualUrl": "https://github.com/EnigmaCurry/vcv-pack/tree/v2#readme",
-  "sourceUrl": "https://github.com/EnigmaCurry/vcv-pack",
-  "donateUrl": "",
-  "changelogUrl": "",
-  "modules": [
-    {
-      "slug": "Transport",
-      "name": "Transport",
-      "description": "A DAW-like transport for play/stop/record",
-      "tags": [
-        "utility"
-      ]
-    }
-  ]
+    "slug": "EnigmaCurry-vcv-pack",
+    "name": "EnigmaCurry",
+    "version": "2.0.0",
+    "license": "MIT",
+    "brand": "EnigmaCurry",
+    "author": "EnigmaCurry",
+    "authorEmail": "ryan@rymcg.tech",
+    "authorUrl": "https://www.enigmacurry.com",
+    "pluginUrl": "https://github.com/EnigmaCurry/vcv-pack",
+    "manualUrl": "https://github.com/EnigmaCurry/vcv-pack/tree/v2#readme",
+    "sourceUrl": "https://github.com/EnigmaCurry/vcv-pack",
+    "donateUrl": "",
+    "changelogUrl": "",
+    "modules": [
+        {
+            "slug": "Transport",
+            "name": "Transport",
+            "description": "A DAW-like transport for play/stop/record",
+            "tags": [
+                "utility"
+            ]
+        },
+        {
+            "slug": "Latch",
+            "name": "Latch",
+            "description": "Latches with discrete triggers and resets.",
+            "tags": [
+                "utility", "polyphonic"
+            ]
+        }
+    ]
 }

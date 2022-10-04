@@ -13,7 +13,7 @@ struct Transport : Module {
   enum OutputIds { PGAT, PTRG, RST, RGAT, RTRG, NUM_OUTPUTS };
   enum LightIds { TAP_LEN_LIGHT, TAP_PLAY_LIGHT, TAP_ARM_LIGHT, NUM_LIGHTS };
   double recordLength = 0;
-  bool bypassRecordLength = false;
+  bool bypassRecordLength = true;
   int playCount = 0;
   int recCount = 0;
   bool playing = false;
@@ -129,7 +129,7 @@ struct Transport : Module {
     toFlipArm = false;
     if (init) {
       armQuantize = 1;
-      bypassRecordLength = false;
+      bypassRecordLength = true;
       recordLengthIsPlayLength = false;
     }
   }

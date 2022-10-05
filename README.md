@@ -3,10 +3,20 @@ EnigmaCurry's VCV pack
 
 This is my collection of modules for [VCV Rack](https://vcvrack.com/).
 
+ * [License](#License)
+ * [Transport](#Transport)
+ * [Latch](#Latch)
+
 ## License
 
 This software is licensed under the [GPLv3+
 license](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/blob/v2/LICENSE)
+
+The panel artwork incorporates the public domain [Camels Caravan
+Silhouette](https://openclipart.org/detail/242201/camels-caravan-silhouette)
+([CC0-1.0](https://creativecommons.org/publicdomain/zero/1.0/)). If
+you publish your own fork, please use different artwork to help
+differentiate the models.
 
 ## Transport
 

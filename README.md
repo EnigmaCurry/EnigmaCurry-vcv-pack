@@ -18,6 +18,12 @@ Silhouette](https://openclipart.org/detail/242201/camels-caravan-silhouette)
 you publish your own fork, please use different artwork to help
 differentiate the models.
 
+Typeface fonts included are licenced under the SIL OPEN FONT LICENSE Version 1.1:
+
+  * [Fantasque](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/blob/v2/res/fonts/Fantasque/LICENSE.txt) Copyright (c) 2013-2017, Jany Belluz (jany.belluz@hotmail.fr)
+  * [DSEG](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/blob/v2/res/fonts/dseg/DSEG-LICENSE.txt) Copyright (c) 2017, keshikan (http://www.keshikan.net)
+  * [Manrope](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/blob/v2/res/fonts/manrope/LICENSE.txt) Copyright [https://manropefont.com/](https://manropefont.com/)
+
 ## Transport
 
 Transport is a DAW-style play/stop/record control, with clocked

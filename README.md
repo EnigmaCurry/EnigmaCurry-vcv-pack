@@ -96,20 +96,33 @@ can be improved??
 
 ## Latch
 
-Latch contains two (2) polyphonic flip-flop latching gates with discrete trigger
-and reset inputs.
+Latch contains two (2) polyphonic CV latching gates ('Flip-flops')
+with discrete triggers and reset inputs. A trigger on the `TRIG` input
+will set `LATCH` output to +10v. A trigger on the `RESET` input will
+set `LATCH` output to 0v. The inputs and outputs are duplicated as two
+separate sections, an upper and lower. Each input and output accepts
+up to 16 channel polyphonic CV, combining both sections offers up to
+32 independent flip-flop gates.
 
 ![Latch](screenshots/Latch.png)
 
 Here is an example problem that Latch helpfully solves:
 
-Impromptu Modular's CLOCKED module has a `RUN` output that outputs a
-trigger when the clock is started AND when stopped (a toggle). If you
-instead wish to have a single gate that is high when playing and low
-when stopped, and you also want discrete play and stop buttons (not a
-toggle), you can use Latch:
+[Impromptu Modular's CLOCKED/CLKD
+modules](https://library.vcvrack.com/ImpromptuModular/Clocked-Clkd)
+have a `RUN` output that only outputs a trigger when the clock is
+started AND/OR when stopped (a toggle). The `RUN` input may be
+configured to accept a gate signal by choosing the right click context
+menu labeled: `Run input CV is level sensitive`, however the `RUN`
+output can only be set as a trigger. If you would rather have a single
+persistent gate that is either high when playing or low when stopped,
+and you also want to have two discrete play and stop buttons/CV inputs
+(not a single toggle button), then you can use Latch to solve this:
 
 ![Latch Patch](screenshots/LatchPatch.png)
+
+You can download this as a [VCV Rack selection
+`.vcvs`](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/raw/v2/patches/Selections/Latch%20CLKD.vcvs)
 
  * Connect a trigger button to the first `TRIG` input of Latch.
  * Connect a different trigger button to the `RESET` input of Latch.
@@ -125,8 +138,18 @@ toggle), you can use Latch:
    presses will not do anything to Latch if the latch is already low
    (but will still reset CLOCKED again because its connected
    directly).
- * This example only uses the top section of Latch, and only with a
-   single monophonic Latch output. You may connect up to 16 polyphonic
-   trigger+reset inputs and 16 latch outputs per section, for a total
-   of 32 latches if you use both sections. Use the Merge and Split
-   (VCV Fundamental) devices to use polyphony.
+
+The example above only uses the top section of Latch, and only with a
+single monophonic Latch output. You may connect up to 16 polyphonic
+trigger+reset inputs and 16 latch outputs per section, for a total of
+32 latches if you use both sections. Use the Merge and Split (VCV
+Fundamental) devices to use polyphony.
+
+Here is a demonstration that uses 20 latches with discrete TRIG and
+RESET inputs from Pulses:
+
+![Latch Polyphonic Demonstration](screenshots/LatchPolyphonicDemonstration.png)
+
+You can download this as a [VCV Rack selection
+`.vcvs`](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/raw/v2/patches/Selections/Latch%20Demonstration.vcvs)
+

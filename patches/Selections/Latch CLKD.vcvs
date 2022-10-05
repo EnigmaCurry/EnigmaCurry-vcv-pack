@@ -1,0 +1,212 @@
+{
+  "modules": [
+    {
+      "id": 7421965944278620,
+      "plugin": "Fundamental",
+      "model": "Scope",
+      "version": "2.3.0",
+      "params": [
+        {
+          "value": 0.0,
+          "id": 0
+        },
+        {
+          "value": 0.0,
+          "id": 1
+        },
+        {
+          "value": 0.0,
+          "id": 2
+        },
+        {
+          "value": 0.0,
+          "id": 3
+        },
+        {
+          "value": 1.0,
+          "id": 4
+        },
+        {
+          "value": 0.0,
+          "id": 5
+        },
+        {
+          "value": 0.0,
+          "id": 6
+        },
+        {
+          "value": 1.0,
+          "id": 7
+        }
+      ],
+      "leftModuleId": 5665670164247935,
+      "pos": [
+        34,
+        1
+      ]
+    },
+    {
+      "id": 5665670164247935,
+      "plugin": "ImpromptuModular",
+      "model": "Clocked-Clkd",
+      "version": "2.1.1",
+      "params": [
+        {
+          "value": 0.0,
+          "id": 0
+        },
+        {
+          "value": 0.0,
+          "id": 1
+        },
+        {
+          "value": 0.0,
+          "id": 2
+        },
+        {
+          "value": 120.0,
+          "id": 3
+        },
+        {
+          "value": 0.0,
+          "id": 4
+        },
+        {
+          "value": 0.0,
+          "id": 5
+        },
+        {
+          "value": 0.0,
+          "id": 6
+        },
+        {
+          "value": 0.0,
+          "id": 7
+        },
+        {
+          "value": 0.0,
+          "id": 8
+        },
+        {
+          "value": 0.0,
+          "id": 9
+        }
+      ],
+      "leftModuleId": 3347272770363640,
+      "rightModuleId": 7421965944278620,
+      "data": {
+        "panelTheme": 0,
+        "panelContrast": 220.0,
+        "running": false,
+        "bpmDetectionMode": true,
+        "resetOnStartStop": 1,
+        "ppqn": 24,
+        "resetClockOutputsHigh": false,
+        "momentaryRunInput": false,
+        "forceCvOnBpmOut": false,
+        "displayIndex": 0,
+        "trigOuts": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "clockMaster": -1
+      },
+      "pos": [
+        24,
+        1
+      ]
+    },
+    {
+      "id": 2032347030147903,
+      "plugin": "LittleUtils",
+      "model": "Button",
+      "version": "2.0.0",
+      "params": [
+        {
+          "value": 0.0,
+          "id": 0
+        }
+      ],
+      "rightModuleId": 1100827034549785,
+      "data": {
+        "toggle": false,
+        "const_choice": 2
+      },
+      "pos": [
+        15,
+        1
+      ]
+    },
+    {
+      "id": 1100827034549785,
+      "plugin": "LittleUtils",
+      "model": "Button",
+      "version": "2.0.0",
+      "params": [
+        {
+          "value": 0.0,
+          "id": 0
+        }
+      ],
+      "leftModuleId": 2032347030147903,
+      "rightModuleId": 3347272770363640,
+      "data": {
+        "toggle": false,
+        "const_choice": 2
+      },
+      "pos": [
+        18,
+        1
+      ]
+    },
+    {
+      "id": 3347272770363640,
+      "plugin": "EnigmaCurry-vcv-pack",
+      "model": "Latch",
+      "version": "2.0.1",
+      "params": [],
+      "leftModuleId": 1100827034549785,
+      "rightModuleId": 5665670164247935,
+      "pos": [
+        21,
+        1
+      ]
+    }
+  ],
+  "cables": [
+    {
+      "id": 5508582933456166,
+      "outputModuleId": 2032347030147903,
+      "outputId": 0,
+      "inputModuleId": 3347272770363640,
+      "inputId": 0,
+      "color": "#f3374b"
+    },
+    {
+      "id": 467403106362947,
+      "outputModuleId": 1100827034549785,
+      "outputId": 0,
+      "inputModuleId": 5665670164247935,
+      "inputId": 0,
+      "color": "#3695ef"
+    },
+    {
+      "id": 7246740673406502,
+      "outputModuleId": 1100827034549785,
+      "outputId": 0,
+      "inputModuleId": 3347272770363640,
+      "inputId": 1,
+      "color": "#00b56e"
+    },
+    {
+      "id": 1728871144761187,
+      "outputModuleId": 3347272770363640,
+      "outputId": 0,
+      "inputModuleId": 7421965944278620,
+      "inputId": 0,
+      "color": "#8b4ade"
+    }
+  ]
+}

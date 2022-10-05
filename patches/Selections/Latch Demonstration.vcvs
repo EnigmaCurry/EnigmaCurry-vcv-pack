@@ -1,0 +1,741 @@
+{
+  "modules": [
+    {
+      "id": 4556558689321871,
+      "plugin": "Fundamental",
+      "model": "Merge",
+      "version": "2.3.0",
+      "params": [],
+      "leftModuleId": 2127448848586367,
+      "rightModuleId": 5826196098489303,
+      "data": {
+        "channels": -1
+      },
+      "pos": [
+        102,
+        1
+      ]
+    },
+    {
+      "id": 7907507336545141,
+      "plugin": "Core",
+      "model": "Notes",
+      "version": "2.1.2",
+      "params": [],
+      "rightModuleId": 2127448848586367,
+      "data": {
+        "text": "This demonstration of Latch uses only 20 of the available 32 latches.\n\nThe 10 Pulses buttons on the left control the TRIG inputs. The 10 Pulses buttons on the right control the RESET inputs.\n\nThe same is duplicated for the bottom section, below.\n\nThe Scope shows all 20 latch outputs.\n\nNotice that repeated button pushes do not toggle the latch, because the TRIGs are discrete from the RESETs."
+      },
+      "pos": [
+        78,
+        1
+      ]
+    },
+    {
+      "id": 1033815306803037,
+      "plugin": "Fundamental",
+      "model": "Scope",
+      "version": "2.3.0",
+      "params": [
+        {
+          "value": 0.0,
+          "id": 0
+        },
+        {
+          "value": 0.0,
+          "id": 1
+        },
+        {
+          "value": 0.0,
+          "id": 2
+        },
+        {
+          "value": 0.0,
+          "id": 3
+        },
+        {
+          "value": 1.0,
+          "id": 4
+        },
+        {
+          "value": 0.0,
+          "id": 5
+        },
+        {
+          "value": 0.0,
+          "id": 6
+        },
+        {
+          "value": 1.0,
+          "id": 7
+        }
+      ],
+      "rightModuleId": 4647637389378198,
+      "pos": [
+        81,
+        2
+      ]
+    },
+    {
+      "id": 8070729384467029,
+      "plugin": "Fundamental",
+      "model": "Pulses",
+      "version": "2.3.0",
+      "params": [
+        {
+          "value": 0.0,
+          "id": 0
+        },
+        {
+          "value": 0.0,
+          "id": 1
+        },
+        {
+          "value": 0.0,
+          "id": 2
+        },
+        {
+          "value": 0.0,
+          "id": 3
+        },
+        {
+          "value": 0.0,
+          "id": 4
+        },
+        {
+          "value": 0.0,
+          "id": 5
+        },
+        {
+          "value": 0.0,
+          "id": 6
+        },
+        {
+          "value": 0.0,
+          "id": 7
+        },
+        {
+          "value": 0.0,
+          "id": 8
+        },
+        {
+          "value": 0.0,
+          "id": 9
+        }
+      ],
+      "leftModuleId": 5156218780840601,
+      "pos": [
+        115,
+        1
+      ]
+    },
+    {
+      "id": 3898667325050765,
+      "plugin": "Fundamental",
+      "model": "Merge",
+      "version": "2.3.0",
+      "params": [],
+      "leftModuleId": 4647637389378198,
+      "rightModuleId": 1459411016568268,
+      "data": {
+        "channels": -1
+      },
+      "pos": [
+        102,
+        2
+      ]
+    },
+    {
+      "id": 5826196098489303,
+      "plugin": "EnigmaCurry-vcv-pack",
+      "model": "Latch",
+      "version": "2.0.1",
+      "params": [],
+      "leftModuleId": 4556558689321871,
+      "rightModuleId": 5156218780840601,
+      "pos": [
+        107,
+        1
+      ]
+    },
+    {
+      "id": 5783803289665430,
+      "plugin": "Fundamental",
+      "model": "Pulses",
+      "version": "2.3.0",
+      "params": [
+        {
+          "value": 0.0,
+          "id": 0
+        },
+        {
+          "value": 0.0,
+          "id": 1
+        },
+        {
+          "value": 0.0,
+          "id": 2
+        },
+        {
+          "value": 0.0,
+          "id": 3
+        },
+        {
+          "value": 0.0,
+          "id": 4
+        },
+        {
+          "value": 0.0,
+          "id": 5
+        },
+        {
+          "value": 0.0,
+          "id": 6
+        },
+        {
+          "value": 0.0,
+          "id": 7
+        },
+        {
+          "value": 0.0,
+          "id": 8
+        },
+        {
+          "value": 0.0,
+          "id": 9
+        }
+      ],
+      "leftModuleId": 8438501944313272,
+      "pos": [
+        115,
+        2
+      ]
+    },
+    {
+      "id": 4647637389378198,
+      "plugin": "Fundamental",
+      "model": "Pulses",
+      "version": "2.3.0",
+      "params": [
+        {
+          "value": 0.0,
+          "id": 0
+        },
+        {
+          "value": 0.0,
+          "id": 1
+        },
+        {
+          "value": 0.0,
+          "id": 2
+        },
+        {
+          "value": 0.0,
+          "id": 3
+        },
+        {
+          "value": 0.0,
+          "id": 4
+        },
+        {
+          "value": 0.0,
+          "id": 5
+        },
+        {
+          "value": 0.0,
+          "id": 6
+        },
+        {
+          "value": 0.0,
+          "id": 7
+        },
+        {
+          "value": 0.0,
+          "id": 8
+        },
+        {
+          "value": 0.0,
+          "id": 9
+        }
+      ],
+      "leftModuleId": 1033815306803037,
+      "rightModuleId": 3898667325050765,
+      "pos": [
+        94,
+        2
+      ]
+    },
+    {
+      "id": 8438501944313272,
+      "plugin": "Fundamental",
+      "model": "Merge",
+      "version": "2.3.0",
+      "params": [],
+      "leftModuleId": 1459411016568268,
+      "rightModuleId": 5783803289665430,
+      "data": {
+        "channels": -1
+      },
+      "pos": [
+        110,
+        2
+      ]
+    },
+    {
+      "id": 2127448848586367,
+      "plugin": "Fundamental",
+      "model": "Pulses",
+      "version": "2.3.0",
+      "params": [
+        {
+          "value": 0.0,
+          "id": 0
+        },
+        {
+          "value": 0.0,
+          "id": 1
+        },
+        {
+          "value": 0.0,
+          "id": 2
+        },
+        {
+          "value": 0.0,
+          "id": 3
+        },
+        {
+          "value": 0.0,
+          "id": 4
+        },
+        {
+          "value": 0.0,
+          "id": 5
+        },
+        {
+          "value": 0.0,
+          "id": 6
+        },
+        {
+          "value": 0.0,
+          "id": 7
+        },
+        {
+          "value": 0.0,
+          "id": 8
+        },
+        {
+          "value": 0.0,
+          "id": 9
+        }
+      ],
+      "leftModuleId": 7907507336545141,
+      "rightModuleId": 4556558689321871,
+      "pos": [
+        94,
+        1
+      ]
+    },
+    {
+      "id": 5156218780840601,
+      "plugin": "Fundamental",
+      "model": "Merge",
+      "version": "2.3.0",
+      "params": [],
+      "leftModuleId": 5826196098489303,
+      "rightModuleId": 8070729384467029,
+      "data": {
+        "channels": -1
+      },
+      "pos": [
+        110,
+        1
+      ]
+    },
+    {
+      "id": 1459411016568268,
+      "plugin": "Core",
+      "model": "Blank",
+      "version": "2.1.2",
+      "params": [],
+      "leftModuleId": 3898667325050765,
+      "rightModuleId": 8438501944313272,
+      "data": {
+        "width": 3
+      },
+      "pos": [
+        107,
+        2
+      ]
+    }
+  ],
+  "cables": [
+    {
+      "id": 2102048614994462,
+      "outputModuleId": 2127448848586367,
+      "outputId": 0,
+      "inputModuleId": 4556558689321871,
+      "inputId": 0,
+      "color": "#8b4ade"
+    },
+    {
+      "id": 229908470424770,
+      "outputModuleId": 2127448848586367,
+      "outputId": 1,
+      "inputModuleId": 4556558689321871,
+      "inputId": 1,
+      "color": "#f3374b"
+    },
+    {
+      "id": 702320095889733,
+      "outputModuleId": 2127448848586367,
+      "outputId": 2,
+      "inputModuleId": 4556558689321871,
+      "inputId": 2,
+      "color": "#ffb437"
+    },
+    {
+      "id": 1352081219276785,
+      "outputModuleId": 2127448848586367,
+      "outputId": 3,
+      "inputModuleId": 4556558689321871,
+      "inputId": 3,
+      "color": "#00b56e"
+    },
+    {
+      "id": 7967407575349166,
+      "outputModuleId": 2127448848586367,
+      "outputId": 4,
+      "inputModuleId": 4556558689321871,
+      "inputId": 4,
+      "color": "#3695ef"
+    },
+    {
+      "id": 7879466434490548,
+      "outputModuleId": 2127448848586367,
+      "outputId": 5,
+      "inputModuleId": 4556558689321871,
+      "inputId": 5,
+      "color": "#8b4ade"
+    },
+    {
+      "id": 8532828699805131,
+      "outputModuleId": 2127448848586367,
+      "outputId": 6,
+      "inputModuleId": 4556558689321871,
+      "inputId": 6,
+      "color": "#f3374b"
+    },
+    {
+      "id": 6940901422851081,
+      "outputModuleId": 2127448848586367,
+      "outputId": 7,
+      "inputModuleId": 4556558689321871,
+      "inputId": 7,
+      "color": "#ffb437"
+    },
+    {
+      "id": 5999735020988502,
+      "outputModuleId": 2127448848586367,
+      "outputId": 8,
+      "inputModuleId": 4556558689321871,
+      "inputId": 8,
+      "color": "#00b56e"
+    },
+    {
+      "id": 3081680883939432,
+      "outputModuleId": 2127448848586367,
+      "outputId": 9,
+      "inputModuleId": 4556558689321871,
+      "inputId": 9,
+      "color": "#3695ef"
+    },
+    {
+      "id": 2188456115493749,
+      "outputModuleId": 4556558689321871,
+      "outputId": 0,
+      "inputModuleId": 5826196098489303,
+      "inputId": 0,
+      "color": "#3695ef"
+    },
+    {
+      "id": 3301025379897887,
+      "outputModuleId": 8070729384467029,
+      "outputId": 0,
+      "inputModuleId": 5156218780840601,
+      "inputId": 0,
+      "color": "#8b4ade"
+    },
+    {
+      "id": 5620355612866774,
+      "outputModuleId": 8070729384467029,
+      "outputId": 1,
+      "inputModuleId": 5156218780840601,
+      "inputId": 1,
+      "color": "#f3374b"
+    },
+    {
+      "id": 6240049504517437,
+      "outputModuleId": 8070729384467029,
+      "outputId": 2,
+      "inputModuleId": 5156218780840601,
+      "inputId": 2,
+      "color": "#ffb437"
+    },
+    {
+      "id": 8306181716166533,
+      "outputModuleId": 8070729384467029,
+      "outputId": 3,
+      "inputModuleId": 5156218780840601,
+      "inputId": 3,
+      "color": "#00b56e"
+    },
+    {
+      "id": 6464640511183569,
+      "outputModuleId": 8070729384467029,
+      "outputId": 4,
+      "inputModuleId": 5156218780840601,
+      "inputId": 4,
+      "color": "#3695ef"
+    },
+    {
+      "id": 7611909820417727,
+      "outputModuleId": 8070729384467029,
+      "outputId": 5,
+      "inputModuleId": 5156218780840601,
+      "inputId": 5,
+      "color": "#8b4ade"
+    },
+    {
+      "id": 846055211873656,
+      "outputModuleId": 8070729384467029,
+      "outputId": 6,
+      "inputModuleId": 5156218780840601,
+      "inputId": 6,
+      "color": "#f3374b"
+    },
+    {
+      "id": 1912356067812414,
+      "outputModuleId": 8070729384467029,
+      "outputId": 7,
+      "inputModuleId": 5156218780840601,
+      "inputId": 7,
+      "color": "#ffb437"
+    },
+    {
+      "id": 4604366148846592,
+      "outputModuleId": 8070729384467029,
+      "outputId": 8,
+      "inputModuleId": 5156218780840601,
+      "inputId": 8,
+      "color": "#00b56e"
+    },
+    {
+      "id": 1768106614546949,
+      "outputModuleId": 8070729384467029,
+      "outputId": 9,
+      "inputModuleId": 5156218780840601,
+      "inputId": 9,
+      "color": "#3695ef"
+    },
+    {
+      "id": 4969469799352063,
+      "outputModuleId": 5156218780840601,
+      "outputId": 0,
+      "inputModuleId": 5826196098489303,
+      "inputId": 1,
+      "color": "#8b4ade"
+    },
+    {
+      "id": 7702106327186121,
+      "outputModuleId": 5826196098489303,
+      "outputId": 0,
+      "inputModuleId": 1033815306803037,
+      "inputId": 0,
+      "color": "#f3374b"
+    },
+    {
+      "id": 6453604222758153,
+      "outputModuleId": 4647637389378198,
+      "outputId": 0,
+      "inputModuleId": 3898667325050765,
+      "inputId": 0,
+      "color": "#8b4ade"
+    },
+    {
+      "id": 3081568462433475,
+      "outputModuleId": 4647637389378198,
+      "outputId": 1,
+      "inputModuleId": 3898667325050765,
+      "inputId": 1,
+      "color": "#f3374b"
+    },
+    {
+      "id": 8114617093989831,
+      "outputModuleId": 4647637389378198,
+      "outputId": 2,
+      "inputModuleId": 3898667325050765,
+      "inputId": 2,
+      "color": "#ffb437"
+    },
+    {
+      "id": 3048966170524111,
+      "outputModuleId": 4647637389378198,
+      "outputId": 3,
+      "inputModuleId": 3898667325050765,
+      "inputId": 3,
+      "color": "#00b56e"
+    },
+    {
+      "id": 8343949891235292,
+      "outputModuleId": 4647637389378198,
+      "outputId": 4,
+      "inputModuleId": 3898667325050765,
+      "inputId": 4,
+      "color": "#3695ef"
+    },
+    {
+      "id": 1447325811812447,
+      "outputModuleId": 4647637389378198,
+      "outputId": 5,
+      "inputModuleId": 3898667325050765,
+      "inputId": 5,
+      "color": "#8b4ade"
+    },
+    {
+      "id": 8456991356499111,
+      "outputModuleId": 4647637389378198,
+      "outputId": 6,
+      "inputModuleId": 3898667325050765,
+      "inputId": 6,
+      "color": "#f3374b"
+    },
+    {
+      "id": 8779929214903401,
+      "outputModuleId": 4647637389378198,
+      "outputId": 7,
+      "inputModuleId": 3898667325050765,
+      "inputId": 7,
+      "color": "#ffb437"
+    },
+    {
+      "id": 8971088216806990,
+      "outputModuleId": 4647637389378198,
+      "outputId": 8,
+      "inputModuleId": 3898667325050765,
+      "inputId": 8,
+      "color": "#00b56e"
+    },
+    {
+      "id": 306644927439494,
+      "outputModuleId": 4647637389378198,
+      "outputId": 9,
+      "inputModuleId": 3898667325050765,
+      "inputId": 9,
+      "color": "#3695ef"
+    },
+    {
+      "id": 340928758627906,
+      "outputModuleId": 5783803289665430,
+      "outputId": 0,
+      "inputModuleId": 8438501944313272,
+      "inputId": 0,
+      "color": "#8b4ade"
+    },
+    {
+      "id": 4460811592647411,
+      "outputModuleId": 5783803289665430,
+      "outputId": 1,
+      "inputModuleId": 8438501944313272,
+      "inputId": 1,
+      "color": "#f3374b"
+    },
+    {
+      "id": 6284052696828127,
+      "outputModuleId": 5783803289665430,
+      "outputId": 2,
+      "inputModuleId": 8438501944313272,
+      "inputId": 2,
+      "color": "#ffb437"
+    },
+    {
+      "id": 1368628793838409,
+      "outputModuleId": 5783803289665430,
+      "outputId": 3,
+      "inputModuleId": 8438501944313272,
+      "inputId": 3,
+      "color": "#00b56e"
+    },
+    {
+      "id": 3499208798832085,
+      "outputModuleId": 5783803289665430,
+      "outputId": 4,
+      "inputModuleId": 8438501944313272,
+      "inputId": 4,
+      "color": "#3695ef"
+    },
+    {
+      "id": 2660929807104650,
+      "outputModuleId": 5783803289665430,
+      "outputId": 5,
+      "inputModuleId": 8438501944313272,
+      "inputId": 5,
+      "color": "#8b4ade"
+    },
+    {
+      "id": 6809316993411018,
+      "outputModuleId": 5783803289665430,
+      "outputId": 6,
+      "inputModuleId": 8438501944313272,
+      "inputId": 6,
+      "color": "#f3374b"
+    },
+    {
+      "id": 2494008512297671,
+      "outputModuleId": 5783803289665430,
+      "outputId": 7,
+      "inputModuleId": 8438501944313272,
+      "inputId": 7,
+      "color": "#ffb437"
+    },
+    {
+      "id": 3258752744602952,
+      "outputModuleId": 5783803289665430,
+      "outputId": 8,
+      "inputModuleId": 8438501944313272,
+      "inputId": 8,
+      "color": "#00b56e"
+    },
+    {
+      "id": 523954773771727,
+      "outputModuleId": 5783803289665430,
+      "outputId": 9,
+      "inputModuleId": 8438501944313272,
+      "inputId": 9,
+      "color": "#3695ef"
+    },
+    {
+      "id": 1748690991783177,
+      "outputModuleId": 3898667325050765,
+      "outputId": 0,
+      "inputModuleId": 5826196098489303,
+      "inputId": 2,
+      "color": "#ffb437"
+    },
+    {
+      "id": 2324853003745144,
+      "outputModuleId": 8438501944313272,
+      "outputId": 0,
+      "inputModuleId": 5826196098489303,
+      "inputId": 3,
+      "color": "#00b56e"
+    },
+    {
+      "id": 1414738391102392,
+      "outputModuleId": 5826196098489303,
+      "outputId": 1,
+      "inputModuleId": 1033815306803037,
+      "inputId": 1,
+      "color": "#3695ef"
+    }
+  ]
+}

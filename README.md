@@ -9,8 +9,12 @@ This is my collection of modules for [VCV Rack](https://vcvrack.com/).
 
 ## License
 
-This software is licensed under the [GPLv3+
-license](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/blob/v2/LICENSE)
+This software is fully licensed under the [GNU General Public License
+v3.0+](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/blob/v2/LICENSE),
+in the hope that is a frictionless way to freely share with the VCV
+Rack and Cardinal community. At your discretion, you may alternatively
+use this software under the terms of the [MIT
+license](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/blob/v2/LICENSE.MIT).
 
 The panel artwork incorporates the public domain [Camels Caravan
 Silhouette](https://openclipart.org/detail/242201/camels-caravan-silhouette)

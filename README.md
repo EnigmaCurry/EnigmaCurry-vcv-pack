@@ -3,6 +3,10 @@ EnigmaCurry's VCV pack
 
 This is my collection of modules for [VCV Rack](https://vcvrack.com/).
 
+## License
+
+This software is licensed under the [GPLv3+
+license](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/blob/v2/LICENSE)
 
 ## Transport
 

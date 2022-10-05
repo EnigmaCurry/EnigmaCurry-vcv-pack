@@ -1,0 +1,8 @@
+2.0.1
+
+ * Added Latch module
+ * Relicensed as GPLv3+
+
+2.0.0
+
+ * Added Transport module

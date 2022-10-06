@@ -11,9 +11,9 @@ This is my collection of modules for [VCV Rack](https://vcvrack.com/).
 
 This software is fully licensed under the [GNU General Public License
 v3.0+](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/blob/v2/LICENSE),
-in the hope that is a frictionless way to freely share with the VCV
-Rack and Cardinal community. At your discretion, you may alternatively
-use this software under the terms of the [MIT
+in the spirit of freely sharing with the VCV Rack and Cardinal
+community. At your discretion, you may alternatively use this software
+under the terms of the [MIT
 license](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/blob/v2/LICENSE.MIT).
 
 The panel artwork incorporates the public domain [Camels Caravan
@@ -22,7 +22,7 @@ Silhouette](https://openclipart.org/detail/242201/camels-caravan-silhouette)
 you publish your own fork, please use different artwork to help
 differentiate the models.
 
-Typeface fonts included are licenced under the SIL OPEN FONT LICENSE Version 1.1:
+Typeface fonts included are licensed under the SIL OPEN FONT LICENSE Version 1.1:
 
   * [Fantasque](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/blob/v2/res/fonts/Fantasque/LICENSE.txt) Copyright (c) 2013-2017, Jany Belluz (jany.belluz@hotmail.fr)
   * [DSEG](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/blob/v2/res/fonts/dseg/DSEG-LICENSE.txt) Copyright (c) 2017, keshikan (http://www.keshikan.net)

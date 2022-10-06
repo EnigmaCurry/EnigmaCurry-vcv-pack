@@ -88,7 +88,12 @@ up to 16 channel polyphonic CV, combining both sections offers up to
 
 ![Latch](screenshots/Latch.png)
 
-Here is an example problem that Latch helpfully solves:
+Here is a simple example, where Latch transforms any set of triggers
+into a persistent ON/OFF gate:
+
+![Latch ON/OFF](screenshots/LatchOnOff.png)
+
+Here is another example problem that Latch helpfully solves:
 
 [Impromptu Modular's CLOCKED/CLKD
 modules](https://library.vcvrack.com/ImpromptuModular/Clocked-Clkd)

@@ -68,12 +68,6 @@ struct DynamicOverlay : rack::TransparentWidget {
   DynamicOverlay(int hp_width) {
     box.pos = Vec(0, 0);
     box.size = mm2px(Vec(hp_width * HP_UNIT, HEIGHT));
-    fontManrope = APP->window->loadFont(
-        asset::plugin(pluginInstance, "res/fonts/manrope/Manrope-Regular.ttf"));
-    fontFantasque = APP->window->loadFont(asset::plugin(
-        pluginInstance, "res/fonts/Fantasque/FantasqueSansMono-Regular.ttf"));
-    fontDseg = APP->window->loadFont(asset::plugin(
-        pluginInstance, "res/fonts/dseg/DSEG14Modern-Regular.ttf"));
   }
   void addText(std::string text, int size, rack::Vec px, NVGcolor color,
                NVGcolor bgColor, int font) {
@@ -90,13 +84,16 @@ struct DynamicOverlay : rack::TransparentWidget {
     std::shared_ptr<Font> font;
     switch (dt.font) {
     case MANROPE:
-      font = fontManrope;
+      font = APP->window->loadFont(
+          asset::plugin(pluginInstance, "res/fonts/manrope/Manrope-Regular.ttf"));
       break;
     case DSEG:
-      font = fontDseg;
+      font = APP->window->loadFont(asset::plugin(
+          pluginInstance, "res/fonts/dseg/DSEG14Modern-Regular.ttf"));
       break;
     case FANTASQUE:
-      font = fontFantasque;
+      font = APP->window->loadFont(asset::plugin(
+          pluginInstance, "res/fonts/Fantasque/FantasqueSansMono-Regular.ttf"));
       break;
     default:
       font = fontFantasque;

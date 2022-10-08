@@ -1,3 +1,8 @@
+2.0.3
+
+ * Fix license name in plugin manifest: "GPL-3.0-or-later"
+ * Load fonts in the drawText call, rather than in the constructor.
+
 2.0.2
 
  * Added Transport Looper example patch

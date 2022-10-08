@@ -41,7 +41,8 @@ anything for an exact number of clock cycles (bars).
    record an unlimited length.)
  * Input a clock signal (`CLK`) to count the number of cycles or bars
    elapsed. (If you want to count bars, usually first divide the
-   incoming `CLK` signal by four.)
+   incoming `CLK` signal by four. If using Impromptu CLOCKED, turn OFF
+   `Outputs high on reset when not running`.)
  * Output a reset signal (`RST`) from Transport back to your clock
    generator. This will reset the clock when playing starts and
    finishes.
@@ -116,9 +117,10 @@ You can download this as a [VCV Rack selection
    In parallel, connect this same trigger button to the `RESET` input
    of CLOCKED.
  * Connect the `LATCH` output of Latch to the `RUN` input of CLOCKED.
-   Right click CLOCKED and select `Run input CV is level sensitive`.
-   The same `LATCH` output can be used as a "Play mode gate" elsewhere
-   in your patch (attached to the scope for example).
+   Right click CLOCKED and select `Run input CV is level sensitive`
+   and turn OFF `Outputs high on reset when not running.` The same
+   `LATCH` output can be used as a "Play mode gate" elsewhere in your
+   patch (attached to the scope for example).
  * Press the first trigger button to start the clock. Additional
    presses will not do anything if the latch is already high.
  * Press the second trigger button to stop/reset the clock. Additional

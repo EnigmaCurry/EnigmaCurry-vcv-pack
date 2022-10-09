@@ -1,3 +1,11 @@
+2.0.4
+
+ * Transport:
+   * Added external reset (stop) input.
+   * Added internal clock divider.
+   * Added play button selectable to be a toggle or idempotent.
+   * Tested working with MIDI-CV CLK and CLK/N for use in a DAW.
+
 2.0.3
 
  * Fix license name in plugin manifest: "GPL-3.0-or-later"

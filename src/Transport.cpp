@@ -21,10 +21,10 @@
 #define TRIGGER_DURATION 1e-3f
 
 struct Transport : Module {
-  enum ParamIds { LEN, TAP_LEN, TAP_PLAY, TAP_ARM, NUM_PARAMS };
-  enum InputIds { PLAY, ARM, CLK, NUM_INPUTS };
+  enum ParamIds { LEN, TAP_LEN, TAP_PLAY, TAP_ARM, TAP_RESET, NUM_PARAMS };
+  enum InputIds { PLAY, ARM, CLK, RESET, NUM_INPUTS };
   enum OutputIds { PGAT, PTRG, RST, RGAT, RTRG, NUM_OUTPUTS };
-  enum LightIds { TAP_LEN_LIGHT, TAP_PLAY_LIGHT, TAP_ARM_LIGHT, NUM_LIGHTS };
+  enum LightIds { TAP_LEN_LIGHT, TAP_PLAY_LIGHT, TAP_ARM_LIGHT, TAP_RESET_LIGHT, NUM_LIGHTS };
   double recordLength = 0;
   bool bypassRecordLength = true;
   int playCount = 0;
@@ -35,36 +35,56 @@ struct Transport : Module {
   bool toFlipArm = false;
   bool recordLengthIsPlayLength = false;
   float blinkPhase = 0.f;
-  dsp::SchmittTrigger clockTrigger, playTrigger, armTrigger;
-  dsp::BooleanTrigger tapLenTrigger, tapPlayTrigger, tapArmTrigger;
+  float resetLightTime = 0.f;
+  int clockDivider = 4;
+  int clockCount = 0;
+  bool playIsIdempotent = false;
+  dsp::SchmittTrigger clockTrigger, playTrigger, armTrigger, resetTrigger;
+  dsp::BooleanTrigger tapLenTrigger, tapPlayTrigger, tapArmTrigger, tapResetTrigger;
   dsp::PulseGenerator playPulse, recordPulse, resetPulse;
 
   Transport() {
     config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-    configParam(Transport::LEN, 0, 128, 32, "Record Length");
+    configParam(Transport::LEN, 0, 128, 4, "Record Length");
     configParam(TAP_LEN, 0.f, 1.f, 0.f, "Bypass record length");
     configParam(TAP_PLAY, 0.f, 1.f, 0.f, "Tap to play");
     configParam(TAP_ARM, 0.f, 1.f, 0.f, "Tap to arm record");
+    configParam(TAP_RESET, 0.f, 1.f, 0.f, "Tap to reset");
     reset(1);
   }
 
   void process(const ProcessArgs &args) override {
-    recordLength = int(params[LEN].getValue());
+    if (resetLightTime > 0.f) {
+      lights[TAP_RESET_LIGHT].setBrightness(1.f);
+      resetLightTime -= args.sampleTime;
+    } else {
+      lights[TAP_RESET_LIGHT].setBrightness(0.f);
+    }
 
+    recordLength = int(params[LEN].getValue());
     if (tapLenTrigger.process(params[TAP_LEN].getValue())) {
       bypassRecordLength = !bypassRecordLength;
+    }
+    //RESET
+    if (resetTrigger.process(inputs[RESET].getNormalVoltage(0.0)) ||
+        tapResetTrigger.process(params[TAP_RESET].getValue())) {
+      triggerResetPulse();
+      reset();
+      return;
     }
     // PLAY
     if (playTrigger.process(inputs[PLAY].getNormalVoltage(0.0)) ||
         tapPlayTrigger.process(params[TAP_PLAY].getValue())) {
-      playing = !playing;
-      if (!playing) {
-        resetPulse.trigger(TRIGGER_DURATION);
-        reset();
+      if (!playIsIdempotent || !playing) {
+        playing = !playing;
+        if (!playing) {
+          triggerResetPulse();
+          reset();
+        }
+        playPulse.trigger(TRIGGER_DURATION);
+        if (armed)
+          recordPulse.trigger(TRIGGER_DURATION);
       }
-      playPulse.trigger(TRIGGER_DURATION);
-      if (armed)
-        recordPulse.trigger(TRIGGER_DURATION);
     }
     // (unclocked) ARM
     if (armTrigger.process(inputs[ARM].getNormalVoltage(0.0)) ||
@@ -85,25 +105,31 @@ struct Transport : Module {
     }
     // CLOCK and (clocked) ARM
     if (playing && clockTrigger.process(inputs[CLK].getNormalVoltage(0.0))) {
-      if (!recordLengthIsPlayLength || bypassRecordLength ||
-          recordLength == 0 || recCount < recordLength) {
-        playCount++;
-        toFlipArm =
+      clockCount += 1;
+      if (clockCount % clockDivider == 0) {
+        clockCount = 0;
+        if (!recordLengthIsPlayLength || bypassRecordLength ||
+            recordLength == 0 || recCount < recordLength) {
+          playCount++;
+          toFlipArm =
             !bypassRecordLength && (recCount == recordLength + 1 - armQuantize)
-                ? true
-                : toFlipArm;
-        recCount += armed ? 1 : 0;
-      } else {
-        resetPulse.trigger(TRIGGER_DURATION);
-        reset();
-      }
-      if (toFlipArm) {
-        if (armQuantize <= 0 || (playCount - 1) % armQuantize == 0) {
-          armed = !armed;
-          toFlipArm = false;
-          recCount = armed ? 1 : 0;
-          recordPulse.trigger(TRIGGER_DURATION);
+            ? true
+            : toFlipArm;
+          recCount += armed ? 1 : 0;
+        } else {
+          triggerResetPulse();
+          reset();
         }
+        if (toFlipArm) {
+          if (armQuantize <= 0 || (playCount - 1) % armQuantize == 0) {
+            armed = !armed;
+            toFlipArm = false;
+            recCount = armed ? 1 : 0;
+            recordPulse.trigger(TRIGGER_DURATION);
+          }
+        }
+      } else {
+        // Skipping this clock cycle
       }
     } else if (!playing && !armed) {
       reset();
@@ -128,12 +154,18 @@ struct Transport : Module {
     outputs[RST].setVoltage(resetPulse.process(args.sampleTime) ? 10.f : 0.f);
   }
 
+  void triggerResetPulse() {
+    resetLightTime = 0.1f;
+    resetPulse.trigger(TRIGGER_DURATION);
+  }
+
   void reset(bool init) {
     playCount = 0;
     recCount = 0;
+    clockCount = -1;
     if (playing && !init) {
       playPulse.trigger(TRIGGER_DURATION);
-      resetPulse.trigger(TRIGGER_DURATION);
+      triggerResetPulse();
     }
     playing = false;
     if (armed)
@@ -142,8 +174,10 @@ struct Transport : Module {
     toFlipArm = false;
     if (init) {
       armQuantize = 1;
-      bypassRecordLength = true;
+      clockDivider = 4;
+      bypassRecordLength = false;
       recordLengthIsPlayLength = false;
+      playIsIdempotent = false;
     }
   }
   void reset() { reset(0); }
@@ -156,6 +190,8 @@ struct Transport : Module {
     json_object_set_new(rootJ, "armed", json_integer((int)armed));
     json_object_set_new(rootJ, "playing", json_integer((int)playing));
     json_object_set_new(rootJ, "armQuantize", json_integer(armQuantize));
+    json_object_set_new(rootJ, "clockDivider", json_integer(clockDivider));
+    json_object_set_new(rootJ, "playIsIdempotent", json_integer(playIsIdempotent));
     json_object_set_new(rootJ, "recordLengthIsPlayLength",
                         json_integer(recordLengthIsPlayLength));
     return rootJ;
@@ -171,6 +207,10 @@ struct Transport : Module {
     playing = (bool)json_integer_value(playingJ);
     json_t *armQuantizeJ = json_object_get(rootJ, "armQuantize");
     armQuantize = json_integer_value(armQuantizeJ);
+    json_t *clockDividerJ = json_object_get(rootJ, "clockDivider");
+    clockDivider = json_integer_value(clockDividerJ);
+    json_t *playIsIdempotentJ = json_object_get(rootJ, "playIsIdempotent");
+    playIsIdempotent = json_integer_value(playIsIdempotentJ);
     json_t *recordLengthIsPlayLengthJ =
         json_object_get(rootJ, "recordLengthIsPlayLength");
     recordLengthIsPlayLength =
@@ -233,7 +273,7 @@ struct TransportWidget : ModuleWidget {
     Vec lenLoc = transportGrid.loc(4, 1);
     Vec tapLenLoc = transportGrid.loc(4, 3);
     Vec clkLoc = transportGrid.loc(8, 1);
-    Vec rstLoc = transportGrid.loc(8, 3);
+    Vec rstLoc = transportGrid.loc(20, 6);
     Vec playLoc = transportGrid.loc(12, 1);
     Vec tapPlayLoc = transportGrid.loc(12, 3);
     Vec pgatLoc = transportGrid.loc(12, 6);
@@ -242,6 +282,8 @@ struct TransportWidget : ModuleWidget {
     Vec tapArmLoc = transportGrid.loc(16, 3);
     Vec rgatLoc = transportGrid.loc(16, 6);
     Vec rtrgLoc = transportGrid.loc(16, 8);
+    Vec resetLoc = transportGrid.loc(20, 1);
+    Vec tapResetLoc = transportGrid.loc(20, 3);
     Vec lengthDisplayLoc = transportGrid.loc(4, 7);
     Vec playLengthDisplayLoc = transportGrid.loc(8, 7);
 
@@ -259,6 +301,10 @@ struct TransportWidget : ModuleWidget {
         createParamCentered<LEDBezel>(tapArmLoc, module, Transport::TAP_ARM));
     addChild(createLightCentered<LEDBezelLight<RedLight>>(
         tapArmLoc, module, Transport::TAP_ARM_LIGHT));
+    addParam(
+        createParamCentered<LEDBezel>(tapResetLoc, module, Transport::TAP_RESET));
+    addChild(createLightCentered<LEDBezelLight<GreenLight>>(
+        tapResetLoc, module, Transport::TAP_RESET_LIGHT));
 
     addInput(createInputCentered<PJ301MPort>(clkLoc, module, Transport::CLK));
     addInput(createInputCentered<PJ301MPort>(playLoc, module, Transport::PLAY));
@@ -273,6 +319,8 @@ struct TransportWidget : ModuleWidget {
         createOutputCentered<PJ301MPort>(rgatLoc, module, Transport::RGAT));
     addOutput(
         createOutputCentered<PJ301MPort>(rtrgLoc, module, Transport::RTRG));
+    addInput(
+        createInputCentered<PJ301MPort>(resetLoc, module, Transport::RESET));
 
     // Draw static text labels to frame buffer
     {
@@ -298,6 +346,8 @@ struct TransportWidget : ModuleWidget {
                        BLACK_TRANSPARENT);
       overlay->addText("RTRG", 12, rtrgLoc.minus(Vec(-1, 20)), WHITE,
                        BLACK_TRANSPARENT);
+      overlay->addText("RESET", 20, resetLoc.minus(Vec(-15, 20)), WHITE,
+                       RED_TRANSPARENT);
       overlay->addBox(lengthDisplayLoc.plus(Vec(-43, -35)),
                       playLengthDisplayLoc.plus(Vec(-40, -15)),
                       BLACK_TRANSPARENT);
@@ -321,11 +371,43 @@ struct TransportWidget : ModuleWidget {
     settingsLabel->text = "Settings";
     menu->addChild(settingsLabel);
 
+    struct ClockDividerValueItem : MenuItem {
+      Transport *module;
+      int value;
+      void onAction(const event::Action &e) override {
+        module->clockDivider = value;
+      }
+    };
+
     struct QuantizeArmValueItem : MenuItem {
       Transport *module;
       int value;
       void onAction(const event::Action &e) override {
         module->armQuantize = value;
+      }
+    };
+
+    struct ClockDividerItem : MenuItem {
+      Transport *module;
+      void createClockDividerSelection(Menu *menu, Transport *module,
+                                      std::string label, int value) {
+        ClockDividerValueItem *item = createMenuItem<ClockDividerValueItem>(
+            label, CHECKMARK(module->clockDivider == value));
+        item->module = module;
+        item->value = value;
+        menu->addChild(item);
+      }
+      Menu *createChildMenu() override {
+        Menu *menu = new Menu;
+        createClockDividerSelection(menu, module, "1", 1);
+        createClockDividerSelection(menu, module, "2", 2);
+        createClockDividerSelection(menu, module, "4 (MIDI-CV CLK/N)", 4);
+        createClockDividerSelection(menu, module, "8", 8);
+        createClockDividerSelection(menu, module, "12", 12);
+        createClockDividerSelection(menu, module, "16", 16);
+        createClockDividerSelection(menu, module, "24 PPQN (MIDI-CV CLK)", 24 * 4);
+        createClockDividerSelection(menu, module, "48 PPQN", 48 * 4);
+        return menu;
       }
     };
 
@@ -361,17 +443,37 @@ struct TransportWidget : ModuleWidget {
       }
     };
 
-    StopOnRecordLengthItem *stopOnRecordLengthItem =
-        createMenuItem<StopOnRecordLengthItem>(
-            "Stop after record length",
-            CHECKMARK(module->recordLengthIsPlayLength));
-    stopOnRecordLengthItem->module = module;
-    menu->addChild(stopOnRecordLengthItem);
+    struct PlayIsIdempotentItem : MenuItem {
+      Transport *module;
+      void onAction(const event::Action &e) override {
+        module->playIsIdempotent = !module->playIsIdempotent;
+      }
+    };
 
     QuantizeArmItem *quantizeArmItem =
         createMenuItem<QuantizeArmItem>("Quantize Arming", RIGHT_ARROW);
     quantizeArmItem->module = module;
     menu->addChild(quantizeArmItem);
+
+    StopOnRecordLengthItem *stopOnRecordLengthItem =
+        createMenuItem<StopOnRecordLengthItem>(
+            "Stop after record length?",
+            CHECKMARK(module->recordLengthIsPlayLength));
+    stopOnRecordLengthItem->module = module;
+    menu->addChild(stopOnRecordLengthItem);
+
+    ClockDividerItem *clockDividerItem =
+        createMenuItem<ClockDividerItem>("Incoming Clock Divider", RIGHT_ARROW);
+    clockDividerItem->module = module;
+    menu->addChild(clockDividerItem);
+
+    PlayIsIdempotentItem *playIsIdempotentItem =
+        createMenuItem<PlayIsIdempotentItem>(
+            "Play button is toggle?",
+            CHECKMARK(!module->playIsIdempotent));
+    playIsIdempotentItem->module = module;
+    menu->addChild(playIsIdempotentItem);
+
   }
 };
 

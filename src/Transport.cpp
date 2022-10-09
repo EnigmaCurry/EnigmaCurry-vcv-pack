@@ -25,6 +25,8 @@ struct Transport : Module {
   enum InputIds { PLAY, ARM, CLK, RESET, NUM_INPUTS };
   enum OutputIds { PGAT, PTRG, RST, RGAT, RTRG, NUM_OUTPUTS };
   enum LightIds { TAP_LEN_LIGHT, TAP_PLAY_LIGHT, TAP_ARM_LIGHT, TAP_RESET_LIGHT, NUM_LIGHTS };
+  enum OnStartActionIds { ON_START_NO_ACTION, ON_START_RESET };
+  enum OnStopActionIds { ON_STOP_NO_ACTION, ON_STOP_RESET };
   double recordLength = 0;
   bool bypassRecordLength = true;
   int playCount = 0;
@@ -39,6 +41,8 @@ struct Transport : Module {
   int clockDivider = 4;
   int clockCount = 0;
   bool playIsIdempotent = false;
+  int onStartActions = ON_START_RESET;
+  int onStopActions = ON_STOP_RESET;
   dsp::SchmittTrigger clockTrigger, playTrigger, armTrigger, resetTrigger;
   dsp::BooleanTrigger tapLenTrigger, tapPlayTrigger, tapArmTrigger, tapResetTrigger;
   dsp::PulseGenerator playPulse, recordPulse, resetPulse;
@@ -46,7 +50,7 @@ struct Transport : Module {
   Transport() {
     config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
     configParam(Transport::LEN, 0, 128, 4, "Record Length");
-    configParam(TAP_LEN, 0.f, 1.f, 0.f, "Bypass record length");
+    configParam(TAP_LEN, 0.f, 1.f, 0.f, "Punch out recording after length");
     configParam(TAP_PLAY, 0.f, 1.f, 0.f, "Tap to play");
     configParam(TAP_ARM, 0.f, 1.f, 0.f, "Tap to arm record");
     configParam(TAP_RESET, 0.f, 1.f, 0.f, "Tap to reset");
@@ -77,7 +81,9 @@ struct Transport : Module {
         tapPlayTrigger.process(params[TAP_PLAY].getValue())) {
       if (!playIsIdempotent || !playing) {
         playing = !playing;
-        if (!playing) {
+        if (playing && onStartActions == ON_START_RESET) {
+          triggerResetPulse();
+        } else if (!playing && onStopActions == ON_STOP_RESET) {
           triggerResetPulse();
           reset();
         }
@@ -175,9 +181,11 @@ struct Transport : Module {
     if (init) {
       armQuantize = 1;
       clockDivider = 4;
-      bypassRecordLength = false;
+      bypassRecordLength = true;
       recordLengthIsPlayLength = false;
       playIsIdempotent = false;
+      onStartActions = ON_START_RESET;
+      onStopActions = ON_STOP_RESET;
     }
   }
   void reset() { reset(0); }
@@ -192,6 +200,8 @@ struct Transport : Module {
     json_object_set_new(rootJ, "armQuantize", json_integer(armQuantize));
     json_object_set_new(rootJ, "clockDivider", json_integer(clockDivider));
     json_object_set_new(rootJ, "playIsIdempotent", json_integer(playIsIdempotent));
+    json_object_set_new(rootJ, "onStartActions", json_integer(onStartActions));
+    json_object_set_new(rootJ, "onStopActions", json_integer(onStopActions));
     json_object_set_new(rootJ, "recordLengthIsPlayLength",
                         json_integer(recordLengthIsPlayLength));
     return rootJ;
@@ -211,6 +221,10 @@ struct Transport : Module {
     clockDivider = json_integer_value(clockDividerJ);
     json_t *playIsIdempotentJ = json_object_get(rootJ, "playIsIdempotent");
     playIsIdempotent = json_integer_value(playIsIdempotentJ);
+    json_t *onStartActionsJ = json_object_get(rootJ, "onStartActions");
+    onStartActions = json_integer_value(onStartActionsJ);
+    json_t *onStopActionsJ = json_object_get(rootJ, "onStopActions");
+    onStopActions = json_integer_value(onStopActionsJ);
     json_t *recordLengthIsPlayLengthJ =
         json_object_get(rootJ, "recordLengthIsPlayLength");
     recordLengthIsPlayLength =
@@ -371,6 +385,64 @@ struct TransportWidget : ModuleWidget {
     settingsLabel->text = "Settings";
     menu->addChild(settingsLabel);
 
+    struct OnStartValueItem : MenuItem {
+      Transport *module;
+      int value;
+      void onAction(const event::Action &e) override {
+        module->onStartActions = value;
+      }
+    };
+    struct OnStartItem : MenuItem {
+      Transport *module;
+      void createOnStartSelection(Menu *menu, Transport *module,
+                                      std::string label, int value) {
+        OnStartValueItem *item = createMenuItem<OnStartValueItem>(
+            label, CHECKMARK(module->onStartActions == value));
+        item->module = module;
+        item->value = value;
+        menu->addChild(item);
+      }
+      Menu *createChildMenu() override {
+        Menu *menu = new Menu;
+        createOnStartSelection(menu, module, "No action", Transport::ON_START_NO_ACTION);
+        createOnStartSelection(menu, module, "Send Reset", Transport::ON_START_RESET);
+        return menu;
+      }
+    };
+    OnStartItem *onStartActionsItem =
+        createMenuItem<OnStartItem>("On Start", RIGHT_ARROW);
+    onStartActionsItem->module = module;
+    menu->addChild(onStartActionsItem);
+
+    struct OnStopValueItem : MenuItem {
+      Transport *module;
+      int value;
+      void onAction(const event::Action &e) override {
+        module->onStopActions = value;
+      }
+    };
+    struct OnStopItem : MenuItem {
+      Transport *module;
+      void createOnStopSelection(Menu *menu, Transport *module,
+                                      std::string label, int value) {
+        OnStopValueItem *item = createMenuItem<OnStopValueItem>(
+            label, CHECKMARK(module->onStopActions == value));
+        item->module = module;
+        item->value = value;
+        menu->addChild(item);
+      }
+      Menu *createChildMenu() override {
+        Menu *menu = new Menu;
+        createOnStopSelection(menu, module, "No action", Transport::ON_START_NO_ACTION);
+        createOnStopSelection(menu, module, "Send Reset", Transport::ON_START_RESET);
+        return menu;
+      }
+    };
+    OnStopItem *onStopActionsItem =
+        createMenuItem<OnStopItem>("On Stop", RIGHT_ARROW);
+    onStopActionsItem->module = module;
+    menu->addChild(onStopActionsItem);
+
     struct ClockDividerValueItem : MenuItem {
       Transport *module;
       int value;
@@ -378,15 +450,6 @@ struct TransportWidget : ModuleWidget {
         module->clockDivider = value;
       }
     };
-
-    struct QuantizeArmValueItem : MenuItem {
-      Transport *module;
-      int value;
-      void onAction(const event::Action &e) override {
-        module->armQuantize = value;
-      }
-    };
-
     struct ClockDividerItem : MenuItem {
       Transport *module;
       void createClockDividerSelection(Menu *menu, Transport *module,
@@ -410,7 +473,19 @@ struct TransportWidget : ModuleWidget {
         return menu;
       }
     };
+    ClockDividerItem *clockDividerItem =
+        createMenuItem<ClockDividerItem>("Incoming Clock Divider", RIGHT_ARROW);
+    clockDividerItem->module = module;
+    menu->addChild(clockDividerItem);
 
+
+    struct QuantizeArmValueItem : MenuItem {
+      Transport *module;
+      int value;
+      void onAction(const event::Action &e) override {
+        module->armQuantize = value;
+      }
+    };
     struct QuantizeArmItem : MenuItem {
       Transport *module;
       void createQuantizeArmSelection(Menu *menu, Transport *module,
@@ -435,6 +510,10 @@ struct TransportWidget : ModuleWidget {
         return menu;
       }
     };
+    QuantizeArmItem *quantizeArmItem =
+        createMenuItem<QuantizeArmItem>("Quantize Arming", RIGHT_ARROW);
+    quantizeArmItem->module = module;
+    menu->addChild(quantizeArmItem);
 
     struct StopOnRecordLengthItem : MenuItem {
       Transport *module;
@@ -442,19 +521,6 @@ struct TransportWidget : ModuleWidget {
         module->recordLengthIsPlayLength = !module->recordLengthIsPlayLength;
       }
     };
-
-    struct PlayIsIdempotentItem : MenuItem {
-      Transport *module;
-      void onAction(const event::Action &e) override {
-        module->playIsIdempotent = !module->playIsIdempotent;
-      }
-    };
-
-    QuantizeArmItem *quantizeArmItem =
-        createMenuItem<QuantizeArmItem>("Quantize Arming", RIGHT_ARROW);
-    quantizeArmItem->module = module;
-    menu->addChild(quantizeArmItem);
-
     StopOnRecordLengthItem *stopOnRecordLengthItem =
         createMenuItem<StopOnRecordLengthItem>(
             "Stop after record length?",
@@ -462,11 +528,12 @@ struct TransportWidget : ModuleWidget {
     stopOnRecordLengthItem->module = module;
     menu->addChild(stopOnRecordLengthItem);
 
-    ClockDividerItem *clockDividerItem =
-        createMenuItem<ClockDividerItem>("Incoming Clock Divider", RIGHT_ARROW);
-    clockDividerItem->module = module;
-    menu->addChild(clockDividerItem);
-
+    struct PlayIsIdempotentItem : MenuItem {
+      Transport *module;
+      void onAction(const event::Action &e) override {
+        module->playIsIdempotent = !module->playIsIdempotent;
+      }
+    };
     PlayIsIdempotentItem *playIsIdempotentItem =
         createMenuItem<PlayIsIdempotentItem>(
             "Play button is toggle?",

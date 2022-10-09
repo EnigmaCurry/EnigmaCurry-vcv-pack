@@ -31,8 +31,15 @@ Typeface fonts included are licensed under the SIL OPEN FONT LICENSE Version 1.1
 ## Transport
 
 Transport is a DAW-style play/stop/record control, with clocked
-punch-in/punch-out (`Quantize Arming`), allowing to play and/or record
-anything for an exact number of clock cycles (bars).
+punch-in/punch-out (`Quantize Arming`), allowing you to play and/or
+record anything for an exact number of clock cycles (bars). Transport
+can control an external recording device to create perfect loops (eg.
+with [Lilac Looper](https://library.vcvrack.com/LilacLoop/Looper)).
+
+Transport works both in standalone VCV Rack, or as a VST (VCV Rack Pro
+/ Cardinal). It can synchronize with your host DAW transport or other
+external MIDI via MIDI-CV, or you can use the on-device trigger
+buttons for `PLAY`, `ARM`, and `RESET`.
 
 ![Transport](screenshots/Transport.png)
 
@@ -40,18 +47,38 @@ anything for an exact number of clock cycles (bars).
    you wish to record. (Or click the button to disable it, and to
    record an unlimited length.)
  * Input a clock signal (`CLK`) to count the number of cycles or bars
-   elapsed. (If you want to count bars, usually first divide the
-   incoming `CLK` signal by four. If using Impromptu CLOCKED, turn OFF
-   `Outputs high on reset when not running`.)
- * Output a reset signal (`RST`) from Transport back to your clock
-   generator. This will reset the clock when playing starts and
-   finishes.
+   elapsed. (Transport has an internal clock divider in the right
+   click context menu, which defaults to `4` because there are
+   [usually] four beats in one bar. Choose `24PPQN` if you are using
+   an external MIDI-CV CLK source.) If you are using [Impromptu
+   CLOCKED](https://library.vcvrack.com/ImpromptuModular/Clocked-Clkd)
+   as your clock source, make sure to turn OFF `Outputs high on reset
+   when not running` in the context menu of CLOCKED. (Your clock
+   signal should start low, and then immediately go high when playback
+   begins, starting at bar `1`.)
  * Tap the `ARM` button, or input a trigger from another source (eg.
    STROKE), to arm recording on next play (or to start recording when
-   already playing.)
+   already playing.) If you want to do many recording takes, you can
+   wire this from the MIDI-CV `STOP` output, and it will automatically
+   re-arm when stopped. You can arm while playing or when stopped.
+   When playing, the `ARM` input is quantized according to your
+   selected `Quantize Arming` in the right click context menu. This
+   will let you record exactly on the down beat (clock high) of the
+   next bar x1, x2, x4 etc. or you can turn it quantization `OFF` to
+   record without any delay.
  * Tap the `PLAY` button, or input a trigger from another source (eg.
    STROKE), to start playing. If recording is armed, recording will
-   start too.
+   start too. Choose whether you want to have `PLAY` be a toggle
+   button, or to behave as a latch (See `Play button is toggle?` in
+   the right click context menu). You can wire this from the MIDI-CV
+   `START` output so that is starts when your DAW Host transport
+   starts.
+ * Tap the `RESET` button, or input a trigger from another source, to
+   reset, stop playing, and un-arm recording. You can wire this from
+   the MIDI-CV `STOP` output and so it would stop when your DAW Host
+   transport stops.
+ * Output a reset signal (`RST`) from Transport back to your clock
+   generator (optional).
  * `PGAT` is output high for the entire time playing. `PTRG` triggers
    a pulse on start and stop.
  * `RGAT` is output high for the entire time recording. `RTRG`
@@ -69,13 +96,23 @@ anything for an exact number of clock cycles (bars).
    wish to stop playback after the recording `LENGTH` counter is
    reached. (When off, the `LENGTH` only affects the recording time.)
 
+Here is an example patch that shows Transport hooked up to the host
+DAW transport via MIDI-CV. The host DAW is set for 120BPM, and the
+Transport record length set to 4 bars, so therefore, when you arm and
+press play, it will send a trigger to start recording, and then stop
+it after exactly 8 seconds as shown elapsed here:
+
+![Transport in your DAW](screenshots/TransportDAWClock.png)
+
+You can download this as a [VCV Rack selection
+`.vcvs`](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/raw/v2/patches/Selections/Transport%20DAW%20Clock.vcvs)
+
 Here is an example patch that acts as a Live Looper platform:
 
 ![Transport Looper](screenshots/TransportLooper.png)
 
 You can download this as a [VCV Rack selection
 `.vcvs`](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/raw/v2/patches/Selections/Transport%20Looper.vcvs)
-
 
 ## Latch
 

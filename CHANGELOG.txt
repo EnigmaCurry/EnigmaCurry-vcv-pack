@@ -5,6 +5,7 @@
    * Added internal clock divider.
    * Added play button selectable to be a toggle or idempotent.
    * Tested working with MIDI-CV CLK and CLK/N for use in a DAW.
+   * Added configurable RESET for start and/or stop in menu.
 
 2.0.3
 

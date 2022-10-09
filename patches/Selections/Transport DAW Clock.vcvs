@@ -1,0 +1,238 @@
+{
+  "modules": [
+    {
+      "id": 5933900602115381,
+      "plugin": "Core",
+      "model": "MIDIToCVInterface",
+      "version": "2.1.2",
+      "params": [],
+      "rightModuleId": 5800490669324018,
+      "data": {
+        "pwRange": 0.0,
+        "smooth": true,
+        "channels": 1,
+        "polyMode": 0,
+        "clockDivision": 24,
+        "lastPitch": 8192,
+        "lastMod": 0,
+        "midi": {
+          "driver": -2,
+          "deviceName": "DAW",
+          "channel": -1
+        }
+      },
+      "pos": [
+        -58,
+        0
+      ]
+    },
+    {
+      "id": 5800490669324018,
+      "plugin": "EnigmaCurry-vcv-pack",
+      "model": "Transport",
+      "version": "2.0.3",
+      "params": [
+        {
+          "value": 4.0,
+          "id": 0
+        },
+        {
+          "value": 0.0,
+          "id": 1
+        },
+        {
+          "value": 0.0,
+          "id": 2
+        },
+        {
+          "value": 0.0,
+          "id": 3
+        },
+        {
+          "value": 0.0,
+          "id": 4
+        }
+      ],
+      "leftModuleId": 5933900602115381,
+      "automId": 105,
+      "data": {
+        "bypassRecordLength": 0,
+        "armed": 0,
+        "playing": 1,
+        "armQuantize": 4,
+        "clockDivider": 96,
+        "playIsIdempotent": 1,
+        "recordLengthIsPlayLength": 0
+      },
+      "pos": [
+        -50,
+        0
+      ]
+    },
+    {
+      "id": 1694037253488538,
+      "plugin": "ImpromptuModular",
+      "model": "Clocked-Clkd",
+      "version": "2.1.1",
+      "params": [
+        {
+          "value": 0.0,
+          "id": 0
+        },
+        {
+          "value": 0.0,
+          "id": 1
+        },
+        {
+          "value": 0.0,
+          "id": 2
+        },
+        {
+          "value": 120.0,
+          "id": 3
+        },
+        {
+          "value": 0.0,
+          "id": 4
+        },
+        {
+          "value": 0.0,
+          "id": 5
+        },
+        {
+          "value": 0.0,
+          "id": 6
+        },
+        {
+          "value": 0.0,
+          "id": 7
+        },
+        {
+          "value": 0.0,
+          "id": 8
+        },
+        {
+          "value": 0.0,
+          "id": 9
+        }
+      ],
+      "rightModuleId": 6613920735554327,
+      "automId": 95,
+      "data": {
+        "panelTheme": 0,
+        "panelContrast": 220.0,
+        "running": true,
+        "bpmDetectionMode": true,
+        "resetOnStartStop": 0,
+        "ppqn": 24,
+        "resetClockOutputsHigh": false,
+        "momentaryRunInput": false,
+        "forceCvOnBpmOut": false,
+        "displayIndex": 0,
+        "trigOuts": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "clockMaster": -1
+      },
+      "pos": [
+        -60,
+        1
+      ]
+    },
+    {
+      "id": 6613920735554327,
+      "plugin": "NYSTHI",
+      "model": "ExpiredTime",
+      "version": "2.0.15",
+      "params": [
+        {
+          "value": 0.0,
+          "id": 0
+        },
+        {
+          "value": 0.0,
+          "id": 1
+        }
+      ],
+      "leftModuleId": 1694037253488538,
+      "automId": 110,
+      "data": {
+        "m_timer_start_on_open": false,
+        "m_timer1_hours": 0,
+        "m_timer1_minutes": 0,
+        "m_timer1_seconds": 0,
+        "m_timer2_hours": 0,
+        "m_timer2_minutes": 0,
+        "m_timer2_seconds": 0,
+        "m_timer3_hours": 0,
+        "m_timer3_minutes": 0,
+        "m_timer3_seconds": 0
+      },
+      "pos": [
+        -50,
+        1
+      ]
+    }
+  ],
+  "cables": [
+    {
+      "id": 5274661455982979,
+      "outputModuleId": 5933900602115381,
+      "outputId": 7,
+      "inputModuleId": 1694037253488538,
+      "inputId": 2,
+      "color": "#ffb437"
+    },
+    {
+      "id": 5448691459742908,
+      "outputModuleId": 5933900602115381,
+      "outputId": 7,
+      "inputModuleId": 5800490669324018,
+      "inputId": 2,
+      "color": "#ffb437"
+    },
+    {
+      "id": 288949344951978,
+      "outputModuleId": 5933900602115381,
+      "outputId": 9,
+      "inputModuleId": 5800490669324018,
+      "inputId": 0,
+      "color": "#3695ef"
+    },
+    {
+      "id": 4844612727790525,
+      "outputModuleId": 5933900602115381,
+      "outputId": 10,
+      "inputModuleId": 5800490669324018,
+      "inputId": 1,
+      "color": "#8b4ade"
+    },
+    {
+      "id": 4235927169244105,
+      "outputModuleId": 5933900602115381,
+      "outputId": 10,
+      "inputModuleId": 5800490669324018,
+      "inputId": 3,
+      "color": "#8b4ade"
+    },
+    {
+      "id": 4335181972677777,
+      "outputModuleId": 5800490669324018,
+      "outputId": 2,
+      "inputModuleId": 6613920735554327,
+      "inputId": 1,
+      "color": "#00b56e"
+    },
+    {
+      "id": 7788392055887985,
+      "outputModuleId": 5800490669324018,
+      "outputId": 4,
+      "inputModuleId": 6613920735554327,
+      "inputId": 0,
+      "color": "#00b56e"
+    }
+  ]
+}

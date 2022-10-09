@@ -64,14 +64,14 @@ buttons for `PLAY`, `ARM`, and `RESET`.
    When playing, the `ARM` input is quantized according to your
    selected `Quantize Arming` in the right click context menu. This
    will let you record exactly on the down beat (clock high) of the
-   next bar x1, x2, x4 etc. or you can turn it quantization `OFF` to
+   next bar x1, x2, x4 etc. or you can turn the quantization `OFF` and
    record without any delay.
  * Tap the `PLAY` button, or input a trigger from another source (eg.
    STROKE), to start playing. If recording is armed, recording will
    start too. Choose whether you want to have `PLAY` be a toggle
    button, or to behave as a latch (See `Play button is toggle?` in
    the right click context menu). You can wire this from the MIDI-CV
-   `START` output so that is starts when your DAW Host transport
+   `START` output so that it starts when your DAW Host transport
    starts.
  * Tap the `RESET` button, or input a trigger from another source, to
    reset, stop playing, and un-arm recording. You can wire this from
@@ -97,17 +97,21 @@ buttons for `PLAY`, `ARM`, and `RESET`.
    reached. (When off, the `LENGTH` only affects the recording time.)
 
 Here is an example patch that shows Transport hooked up to the host
-DAW transport via MIDI-CV. The host DAW is set for 120BPM, and the
-Transport record length set to 4 bars, so therefore, when you arm and
-press play, it will send a trigger to start recording, and then stop
-it after exactly 8 seconds as shown elapsed here:
+DAW transport via MIDI-CV and set to automatically re-arm the
+recording on stop for multiple recording takes. The host DAW is set
+for 120BPM, Transport's internal clock divider is set to `24 PPQN`,
+and the Transport record length is set to 4 bars, so therefore, when
+its (automatically) armed and you press play, it will send a trigger
+to start recording, and then stop it after exactly 8 seconds as shown
+elapsed here:
 
 ![Transport in your DAW](screenshots/TransportDAWClock.png)
 
 You can download this as a [VCV Rack selection
 `.vcvs`](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/raw/v2/patches/Selections/Transport%20DAW%20Clock.vcvs)
 
-Here is an example patch that acts as a Live Looper platform:
+Here is an example patch that acts as a Live Looper platform (see
+notes inside the patch):
 
 ![Transport Looper](screenshots/TransportLooper.png)
 
@@ -126,7 +130,7 @@ up to 16 channel polyphonic CV, combining both sections offers up to
 
 ![Latch](screenshots/Latch.png)
 
-Here is a simple example, where Latch transforms any set of triggers
+Here is a simple example, where Latch transforms any pair of triggers
 into a persistent ON/OFF gate:
 
 ![Latch ON/OFF](screenshots/LatchOnOff.png)

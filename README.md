@@ -37,15 +37,16 @@ can control an external recording device to create perfect loops (eg.
 with [Lilac Looper](https://library.vcvrack.com/LilacLoop/Looper)).
 
 Transport works both in standalone VCV Rack, or as a VST (VCV Rack Pro
-/ Cardinal). It can synchronize with your host DAW transport or other
-external MIDI via MIDI-CV, or you can use the on-device trigger
-buttons for `PLAY`, `ARM`, and `RESET`.
+/ Cardinal). Transport can be controlled with your host DAW transport
+buttons (play/stop) or other external MIDI transport via MIDI-CV, or
+you can use the on-device trigger buttons for `PLAY`, `ARM`, and
+`RESET`.
 
 ![Transport](screenshots/Transport.png)
 
  * Set `LENGTH` to the number of clock cycles (eg. beats, bars) that
-   you wish to record. (Or click the button to disable it, and to
-   record an unlimited length.)
+   you wish to record. (Or toggle the button next to it OFF, to
+   disable it, and to record an unlimited length.)
  * Input a clock signal (`CLK`) to count the number of cycles or bars
    elapsed. (Transport has an internal clock divider in the right
    click context menu, which defaults to `4` because there are
@@ -55,17 +56,17 @@ buttons for `PLAY`, `ARM`, and `RESET`.
    as your clock source, make sure to turn OFF `Outputs high on reset
    when not running` in the context menu of CLOCKED. (Your clock
    signal should start low, and then immediately go high when playback
-   begins, starting at bar `1`.)
+   begins, counting starts at bar `1`. When stopped, the clock should
+   return low.)
  * Tap the `ARM` button, or input a trigger from another source (eg.
    STROKE), to arm recording on next play (or to start recording when
    already playing.) If you want to do many recording takes, you can
    wire this from the MIDI-CV `STOP` output, and it will automatically
-   re-arm when stopped. You can arm while playing or when stopped.
-   When playing, the `ARM` input is quantized according to your
-   selected `Quantize Arming` in the right click context menu. This
-   will let you record exactly on the down beat (clock high) of the
-   next bar x1, x2, x4 etc. or you can turn the quantization `OFF` and
-   record without any delay.
+   re-arm when stopped. When already playing, the `ARM` input is
+   quantized according to your selected `Quantize Arming` in the right
+   click context menu. This will let you record exactly on the down
+   beat (clock high) of the next bar x1, x2, x4 etc. or you can turn
+   the quantization `OFF` and record without any delay.
  * Tap the `PLAY` button, or input a trigger from another source (eg.
    STROKE), to start playing. If recording is armed, recording will
    start too. Choose whether you want to have `PLAY` be a toggle
@@ -76,7 +77,9 @@ buttons for `PLAY`, `ARM`, and `RESET`.
  * Tap the `RESET` button, or input a trigger from another source, to
    reset, stop playing, and un-arm recording. You can wire this from
    the MIDI-CV `STOP` output and so it would stop when your DAW Host
-   transport stops.
+   transport stops. By default, a `RST` trigger is output everytime
+   playback starts or stops. This can be configured in the right click
+   context menu under `On Start` and `On Stop`.
  * Output a reset signal (`RST`) from Transport back to your clock
    generator (optional).
  * `PGAT` is output high for the entire time playing. `PTRG` triggers
@@ -115,8 +118,8 @@ notes inside the patch):
 
 ![Transport Looper](screenshots/TransportLooper.png)
 
-You can download this as a [VCV Rack selection
-`.vcvs`](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/raw/v2/patches/Selections/Transport%20Looper.vcvs)
+You can download this as a VCV Rack selection
+`.vcvs` in two versions: 1) [DAW-less where Transport has primary control](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/raw/v2/patches/Selections/Transport%20Looper.vcvs) and 2) [Controlled by MIDI-CV for use in a DAW.](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/raw/v2/patches/Selections/Transport%20Looper%20MIDI-CV.vcvs)
 
 ## Latch
 

@@ -1,10 +1,10 @@
 {
   "modules": [
     {
-      "id": 7421965944278620,
+      "id": 8001133985037248,
       "plugin": "Fundamental",
       "model": "Scope",
-      "version": "2.3.0",
+      "version": "2.3.1",
       "params": [
         {
           "value": 0.0,
@@ -39,14 +39,60 @@
           "id": 7
         }
       ],
-      "leftModuleId": 5665670164247935,
+      "leftModuleId": 7297335394590132,
+      "automId": 0,
       "pos": [
         34,
         1
       ]
     },
     {
-      "id": 5665670164247935,
+      "id": 2239705572032398,
+      "plugin": "LittleUtils",
+      "model": "Button",
+      "version": "2.0.0",
+      "params": [
+        {
+          "value": 0.0,
+          "id": 0
+        }
+      ],
+      "leftModuleId": 3931894109635274,
+      "rightModuleId": 5524460837525163,
+      "automId": 29,
+      "data": {
+        "toggle": true,
+        "const_choice": 3
+      },
+      "pos": [
+        18,
+        1
+      ]
+    },
+    {
+      "id": 3931894109635274,
+      "plugin": "LittleUtils",
+      "model": "Button",
+      "version": "2.0.0",
+      "params": [
+        {
+          "value": 0.0,
+          "id": 0
+        }
+      ],
+      "rightModuleId": 2239705572032398,
+      "automId": 28,
+      "data": {
+        "toggle": true,
+        "const_choice": 3
+      },
+      "pos": [
+        15,
+        1
+      ]
+    },
+    {
+      "id": 7297335394590132,
       "plugin": "ImpromptuModular",
       "model": "Clocked-Clkd",
       "version": "2.1.1",
@@ -92,8 +138,9 @@
           "id": 9
         }
       ],
-      "leftModuleId": 3347272770363640,
-      "rightModuleId": 7421965944278620,
+      "leftModuleId": 5524460837525163,
+      "rightModuleId": 8001133985037248,
+      "automId": 18,
       "data": {
         "panelTheme": 0,
         "panelContrast": 220.0,
@@ -119,56 +166,13 @@
       ]
     },
     {
-      "id": 2032347030147903,
-      "plugin": "LittleUtils",
-      "model": "Button",
-      "version": "2.0.0",
-      "params": [
-        {
-          "value": 0.0,
-          "id": 0
-        }
-      ],
-      "rightModuleId": 1100827034549785,
-      "data": {
-        "toggle": false,
-        "const_choice": 2
-      },
-      "pos": [
-        15,
-        1
-      ]
-    },
-    {
-      "id": 1100827034549785,
-      "plugin": "LittleUtils",
-      "model": "Button",
-      "version": "2.0.0",
-      "params": [
-        {
-          "value": 0.0,
-          "id": 0
-        }
-      ],
-      "leftModuleId": 2032347030147903,
-      "rightModuleId": 3347272770363640,
-      "data": {
-        "toggle": false,
-        "const_choice": 2
-      },
-      "pos": [
-        18,
-        1
-      ]
-    },
-    {
-      "id": 3347272770363640,
-      "plugin": "EnigmaCurry-vcv-pack",
+      "id": 5524460837525163,
+      "plugin": "EnigmaCurry",
       "model": "Latch",
-      "version": "2.0.1",
+      "version": "2.0.4",
       "params": [],
-      "leftModuleId": 1100827034549785,
-      "rightModuleId": 5665670164247935,
+      "leftModuleId": 2239705572032398,
+      "rightModuleId": 7297335394590132,
       "pos": [
         21,
         1
@@ -177,36 +181,44 @@
   ],
   "cables": [
     {
-      "id": 5508582933456166,
-      "outputModuleId": 2032347030147903,
+      "id": 7641757599906860,
+      "outputModuleId": 2239705572032398,
       "outputId": 0,
-      "inputModuleId": 3347272770363640,
-      "inputId": 0,
-      "color": "#f3374b"
-    },
-    {
-      "id": 467403106362947,
-      "outputModuleId": 1100827034549785,
-      "outputId": 0,
-      "inputModuleId": 5665670164247935,
+      "inputModuleId": 7297335394590132,
       "inputId": 0,
       "color": "#3695ef"
     },
     {
-      "id": 7246740673406502,
-      "outputModuleId": 1100827034549785,
+      "id": 5566543823815322,
+      "outputModuleId": 3931894109635274,
       "outputId": 0,
-      "inputModuleId": 3347272770363640,
+      "inputModuleId": 5524460837525163,
+      "inputId": 0,
+      "color": "#ffb437"
+    },
+    {
+      "id": 649915465474984,
+      "outputModuleId": 2239705572032398,
+      "outputId": 0,
+      "inputModuleId": 5524460837525163,
       "inputId": 1,
+      "color": "#3695ef"
+    },
+    {
+      "id": 1460973974314053,
+      "outputModuleId": 5524460837525163,
+      "outputId": 0,
+      "inputModuleId": 8001133985037248,
+      "inputId": 0,
       "color": "#00b56e"
     },
     {
-      "id": 1728871144761187,
-      "outputModuleId": 3347272770363640,
+      "id": 8388902875304127,
+      "outputModuleId": 5524460837525163,
       "outputId": 0,
-      "inputModuleId": 7421965944278620,
-      "inputId": 0,
-      "color": "#8b4ade"
+      "inputModuleId": 7297335394590132,
+      "inputId": 1,
+      "color": "#00b56e"
     }
   ]
 }

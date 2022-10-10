@@ -1,9 +1,8 @@
 EnigmaCurry's VCV pack
 ==============================
 
-This is my collection of modules for [VCV Rack](https://vcvrack.com/).
+This is my collection of modules for [VCV Rack](https://vcvrack.com/):
 
- * [License](#License)
  * [Transport](#Transport)
  * [Latch](#Latch)
 
@@ -28,7 +27,14 @@ Typeface fonts included are licensed under the SIL OPEN FONT LICENSE Version 1.1
   * [DSEG](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/blob/v2/res/fonts/dseg/DSEG-LICENSE.txt) Copyright (c) 2017, keshikan (http://www.keshikan.net)
   * [Manrope](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/blob/v2/res/fonts/manrope/LICENSE.txt) Copyright [https://manropefont.com/](https://manropefont.com/)
 
-## Transport
+## Changelog
+
+ * [CHANGELOG.txt](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/blob/v2/CHANGELOG.txt).
+ * [VCV Rack Library updates](https://github.com/VCVRack/library/issues/741).
+
+## Modules
+
+### Transport
 
 Transport is a DAW-style play/stop/record control, with clocked
 punch-in/punch-out (`Quantize Arming`), allowing you to play and/or
@@ -91,6 +97,10 @@ you can use the on-device trigger buttons for `PLAY`, `ARM`, and
    `Run CV input is level sensitive` in the right click dialog.)
  * Connect `RGAT` to the recorder GATE input, or `RTRG` to its TRIGGER
    input.
+ * The `LOOP` output is a trigger that pulses at the beginning of
+   every loop of the record length (whether recording or not). You can
+   use this to trigger a sampler so that it synchronizes back to the
+   original clock that it was recorded with.
  * In the right click context menu of Transport, set `Quantize Arming`
    if you want the recording to start exactly on the next beat/bar
    x1,2,4,8,16 etc. The arm button will flash while waiting for the
@@ -121,7 +131,7 @@ notes inside the patch):
 You can download this as a VCV Rack selection
 `.vcvs` in two versions: 1) [DAW-less where Transport has primary control](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/raw/v2/patches/Selections/Transport%20Looper.vcvs) and 2) [Controlled by MIDI-CV for use in a DAW.](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/raw/v2/patches/Selections/Transport%20Looper%20MIDI-CV.vcvs)
 
-## Latch
+### Latch
 
 Latch contains two (2) polyphonic CV latching gates ('Flip-flops')
 with discrete triggers and reset inputs. A trigger on the `TRIG` input

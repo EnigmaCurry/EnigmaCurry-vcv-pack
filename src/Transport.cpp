@@ -23,11 +23,11 @@
 struct Transport : Module {
   enum ParamIds { LEN, TAP_LEN, TAP_PLAY, TAP_ARM, TAP_RESET, NUM_PARAMS };
   enum InputIds { PLAY, ARM, CLK, RESET, NUM_INPUTS };
-  enum OutputIds { PGAT, PTRG, RST, RGAT, RTRG, NUM_OUTPUTS };
+  enum OutputIds { PGAT, PTRG, RST, RGAT, RTRG, LOOP, NUM_OUTPUTS };
   enum LightIds { TAP_LEN_LIGHT, TAP_PLAY_LIGHT, TAP_ARM_LIGHT, TAP_RESET_LIGHT, NUM_LIGHTS };
   enum OnStartActionIds { ON_START_NO_ACTION, ON_START_RESET };
   enum OnStopActionIds { ON_STOP_NO_ACTION, ON_STOP_RESET };
-  double recordLength = 0;
+  int recordLength = 0;
   bool bypassRecordLength = true;
   int playCount = 0;
   int recCount = 0;
@@ -45,7 +45,7 @@ struct Transport : Module {
   int onStopActions = ON_STOP_RESET;
   dsp::SchmittTrigger clockTrigger, playTrigger, armTrigger, resetTrigger;
   dsp::BooleanTrigger tapLenTrigger, tapPlayTrigger, tapArmTrigger, tapResetTrigger;
-  dsp::PulseGenerator playPulse, recordPulse, resetPulse;
+  dsp::PulseGenerator playPulse, recordPulse, resetPulse, loopPulse;
 
   Transport() {
     config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -117,6 +117,9 @@ struct Transport : Module {
         if (!recordLengthIsPlayLength || bypassRecordLength ||
             recordLength == 0 || recCount < recordLength) {
           playCount++;
+          if (playCount % recordLength == 1) {
+            triggerLoopPulse();
+          }
           toFlipArm =
             !bypassRecordLength && (recCount == recordLength + 1 - armQuantize)
             ? true
@@ -158,11 +161,16 @@ struct Transport : Module {
     outputs[PTRG].setVoltage(playPulse.process(args.sampleTime) ? 10.f : 0.f);
     outputs[RTRG].setVoltage(recordPulse.process(args.sampleTime) ? 10.f : 0.f);
     outputs[RST].setVoltage(resetPulse.process(args.sampleTime) ? 10.f : 0.f);
+    outputs[LOOP].setVoltage(loopPulse.process(args.sampleTime) ? 10.f : 0.f);
   }
 
   void triggerResetPulse() {
     resetLightTime = 0.1f;
     resetPulse.trigger(TRIGGER_DURATION);
+  }
+
+  void triggerLoopPulse() {
+    loopPulse.trigger(TRIGGER_DURATION);
   }
 
   void reset(bool init) {
@@ -260,7 +268,7 @@ struct TransportDisplay : public DynamicOverlay {
       return;
     DynamicOverlay::clear();
     std::string recordLength = pad(module->recordLength);
-    std::string playCount = pad(module->playCount);
+    std::string playCount = pad(module->playCount % 1000);
     std::string recCount = pad(module->recCount);
 
     addText(recordLength, 25, transportGrid.loc(4, 7).minus(Vec(8, -15)),
@@ -287,6 +295,7 @@ struct TransportWidget : ModuleWidget {
     Vec lenLoc = transportGrid.loc(4, 1);
     Vec tapLenLoc = transportGrid.loc(4, 3);
     Vec clkLoc = transportGrid.loc(8, 1);
+    Vec loopLoc = transportGrid.loc(8, 3);
     Vec rstLoc = transportGrid.loc(20, 6);
     Vec playLoc = transportGrid.loc(12, 1);
     Vec tapPlayLoc = transportGrid.loc(12, 3);
@@ -321,6 +330,7 @@ struct TransportWidget : ModuleWidget {
         tapResetLoc, module, Transport::TAP_RESET_LIGHT));
 
     addInput(createInputCentered<PJ301MPort>(clkLoc, module, Transport::CLK));
+    addOutput(createOutputCentered<PJ301MPort>(loopLoc, module, Transport::LOOP));
     addInput(createInputCentered<PJ301MPort>(playLoc, module, Transport::PLAY));
     addInput(
         createInputCentered<PJ301MPort>(armRecLoc, module, Transport::ARM));
@@ -346,6 +356,8 @@ struct TransportWidget : ModuleWidget {
                        RED_TRANSPARENT);
       overlay->addText("CLK", 12, clkLoc.minus(Vec(0, 20)), WHITE,
                        RED_TRANSPARENT);
+      overlay->addText("LOOP", 12, loopLoc.minus(Vec(0, 20)), WHITE,
+                       BLACK_TRANSPARENT);
       overlay->addText("RST", 12, rstLoc.minus(Vec(0, 20)), WHITE,
                        BLACK_TRANSPARENT);
       overlay->addText("PLAY", 20, playLoc.minus(Vec(-15, 20)), WHITE,

@@ -1,4 +1,12 @@
+2.0.5
+
+ * Transport:
+   * Added LOOP trigger output, pulsed at the start of every record length loop.
+   * playCount display is modulo 1000 so that it loops back to 0 after 999.
+
 2.0.4
+
+ * Changed slug to `EnigmaCurry`.
 
  * Transport:
    * Added external reset (stop) input.

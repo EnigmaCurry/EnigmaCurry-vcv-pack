@@ -4,15 +4,17 @@
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 3 of
- * the License, or any later version.
+ * published by the Free Software Foundation; either version 3 of the
+ * License, or any later version. At your discretion, you may alternatively
+ * redistribute it and/or modify it under the terms of the MIT License.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
+ * GNU General Public License and/or MIT License for more details.
  *
- * For a full copy of the GNU General Public License see the LICENSE file.
+ * For a full copy of the GNU General Public License see the /LICENSE file.
+ * For a full copy of the MIT License see the /LICENSE.MIT file.
  */
 
 #include "components.hpp"
@@ -54,6 +56,16 @@ struct Transport : Module {
     configParam(TAP_PLAY, 0.f, 1.f, 0.f, "Tap to play");
     configParam(TAP_ARM, 0.f, 1.f, 0.f, "Tap to arm record");
     configParam(TAP_RESET, 0.f, 1.f, 0.f, "Tap to reset");
+    configInput(CLK, "Clock");
+    configInput(PLAY, "Play");
+    configInput(RESET, "Reset / Stop");
+    configInput(ARM, "Arm Recording");
+    configOutput(LOOP, "Loop Trigger");
+    configOutput(PGAT, "Play Gate");
+    configOutput(PTRG, "Player Trigger");
+    configOutput(RGAT, "Record Gate");
+    configOutput(RTRG, "Record Trigger");
+    configOutput(RST, "Reset Trigger");
     reset(1);
   }
 

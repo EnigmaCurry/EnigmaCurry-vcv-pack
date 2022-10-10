@@ -1,3 +1,9 @@
+2.0.6
+
+ * Updated copyright headers across all cpp and hpp files to reflect dual license.
+ * Transport:
+   * Added labels to all inputs and outputs.
+
 2.0.5
 
  * Transport:

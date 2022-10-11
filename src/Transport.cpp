@@ -62,7 +62,7 @@ struct Transport : Module {
     configInput(ARM, "Arm Recording");
     configOutput(LOOP, "Loop Trigger");
     configOutput(PGAT, "Play Gate");
-    configOutput(PTRG, "Player Trigger");
+    configOutput(PTRG, "Play Trigger");
     configOutput(RGAT, "Record Gate");
     configOutput(RTRG, "Record Trigger");
     configOutput(RST, "Reset Trigger");

@@ -76,10 +76,6 @@ typedef struct {
 
 struct DynamicOverlay : rack::TransparentWidget {
   ModuleWidget *module;
-  std::shared_ptr<Font> fontManrope;
-  std::shared_ptr<Font> fontManropeBold;
-  std::shared_ptr<Font> fontDseg;
-  std::shared_ptr<Font> fontFantasque;
   std::vector<draw_text> text_calls;
   std::vector<draw_box> box_calls;
 
@@ -114,7 +110,8 @@ struct DynamicOverlay : rack::TransparentWidget {
           pluginInstance, "res/fonts/Fantasque/FantasqueSansMono-Regular.ttf"));
       break;
     default:
-      font = fontFantasque;
+      font = APP->window->loadFont(asset::plugin(
+          pluginInstance, "res/fonts/Fantasque/FantasqueSansMono-Regular.ttf"));
     }
     nvgFontSize(args.vg, dt.size);
     nvgFontFaceId(args.vg, font->handle);

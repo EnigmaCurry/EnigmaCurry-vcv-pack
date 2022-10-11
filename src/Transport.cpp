@@ -128,7 +128,7 @@ struct Transport : Module {
         clockCount = 0;
         if (!recordLengthIsPlayLength || bypassRecordLength ||
             recordLength == 0 || recCount < recordLength) {
-          playCount++;
+          playCount = (playCount + 1) % 1000;
           if (playCount % recordLength == 1) {
             triggerLoopPulse();
           }
@@ -280,7 +280,7 @@ struct TransportDisplay : public DynamicOverlay {
       return;
     DynamicOverlay::clear();
     std::string recordLength = pad(module->recordLength);
-    std::string playCount = pad(module->playCount % 1000);
+    std::string playCount = pad(module->playCount);
     std::string recCount = pad(module->recCount);
 
     addText(recordLength, 25, transportGrid.loc(4, 7).minus(Vec(8, -15)),

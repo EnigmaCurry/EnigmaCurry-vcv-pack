@@ -36,6 +36,12 @@ Typeface fonts included are licensed under the SIL OPEN FONT LICENSE Version 1.1
 
 ### Transport
 
+You can watch this 20 minute video introduction to Transport and
+Latch, or you can read everything below and then download the pre-made
+patches:
+
+[![Transport and Latch video](screenshots/Transport%20and%20Latch%20Video.png)](https://odysee.com/@EnigmaCurry:99/transport-and-latch:0)
+
 Transport is a DAW-style play/stop/record control, with clocked
 punch-in/punch-out (`Quantize Arming`), allowing you to play and/or
 record anything for an exact number of clock cycles (bars). Transport
@@ -129,7 +135,7 @@ notes inside the patch):
 ![Transport Looper](screenshots/TransportLooper.png)
 
 You can download this as a VCV Rack selection
-`.vcvs` in two versions: 1) [DAW-less where Transport has primary control](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/raw/v2/patches/Selections/Transport%20Looper.vcvs) and 2) [Controlled by MIDI-CV for use in a DAW.](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/raw/v2/patches/Selections/Transport%20Looper%20MIDI-CV.vcvs)
+`.vcvs` in several versions: 1) [DAW-less where Transport has primary control](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/raw/v2/patches/Selections/Transport%20Looper.vcvs) and 2) [Controlled by MIDI-CV for use in a DAW.](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/raw/v2/patches/Selections/Transport%20Looper%20MIDI-CV.vcvs) and 3) [MIDI-CV 8 stereo channel version](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/raw/v2/patches/Selections/Transport%20Looper%20MIDI-CV%208ch%20stereo.vcvs)
 
 ### Latch
 

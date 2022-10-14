@@ -1,3 +1,11 @@
+2.0.7
+
+ * Store the actual playCount as modulo 1000.
+ * Remove unused font references.
+ * Included utility for splitting a 16 channel .wav file recorded by
+   Lilac Looper into 8 separate stereo .wav files.
+ * Included 8 stereo channel looper patch.
+
 2.0.6
 
  * Updated copyright headers across all cpp and hpp files to reflect dual license.

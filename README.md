@@ -137,6 +137,25 @@ notes inside the patch):
 You can download this as a VCV Rack selection
 `.vcvs` in several versions: 1) [DAW-less where Transport has primary control](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/raw/v2/patches/Selections/Transport%20Looper.vcvs) and 2) [Controlled by MIDI-CV for use in a DAW.](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/raw/v2/patches/Selections/Transport%20Looper%20MIDI-CV.vcvs) and 3) [MIDI-CV 8 stereo channel version](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/raw/v2/patches/Selections/Transport%20Looper%20MIDI-CV%208ch%20stereo.vcvs)
 
+#### Tool included for splitting a multi-channel .wav from Lilac Looper
+
+In this repository is an included tool called
+[wavsplit.sh](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/blob/v2/tool/wavsplit.sh),
+which is a BASH script that runs the
+[sox](https://sox.sourceforge.net) tool to split a 16-channel .wav
+file into 8 separate stereo .wav files. 
+
+ * You will need a copy of [sox](https://sox.sourceforge.net)
+   installed (available in any Linux package manager, and probably
+   available on Mac and Windows too)
+ * The BASH shell. (standard on Linux, and should be on Mac too. For
+   Windows try WSL.)
+ * Run the script like this: `./wavsplit.sh recording.wav`
+ * The script will check to see if all dependencies are met, and then
+   attempt to split the `recording.wav` into 8 separate stereo tracks
+   named `recording_1.wav` -> `recording_8.wav` in the same directory
+   as `recording.wav`.
+
 ### Latch
 
 Latch contains two (2) polyphonic CV latching gates ('Flip-flops')

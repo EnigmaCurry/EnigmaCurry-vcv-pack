@@ -6,6 +6,9 @@ This is my collection of modules for [VCV Rack](https://vcvrack.com/):
  * [Transport](#Transport)
  * [Latch](#Latch)
 
+[These modules are freely available in the VCV Rack
+Library.](https://library.vcvrack.com/?brand=EnigmaCurry)
+
 ## License
 
 This software is fully licensed under the [GNU General Public License

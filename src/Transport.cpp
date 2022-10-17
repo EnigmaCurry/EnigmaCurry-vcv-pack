@@ -43,7 +43,7 @@ struct Transport : Module {
   int clockDivider = 4;
   int clockCount = 0;
   bool playIsIdempotent = false;
-  int onStartActions = ON_START_RESET;
+  int onStartActions = ON_START_NO_ACTION;
   int onStopActions = ON_STOP_RESET;
   dsp::SchmittTrigger clockTrigger, playTrigger, armTrigger, resetTrigger;
   dsp::BooleanTrigger tapLenTrigger, tapPlayTrigger, tapArmTrigger, tapResetTrigger;
@@ -204,7 +204,7 @@ struct Transport : Module {
       bypassRecordLength = true;
       recordLengthIsPlayLength = false;
       playIsIdempotent = false;
-      onStartActions = ON_START_RESET;
+      onStartActions = ON_START_NO_ACTION;
       onStopActions = ON_STOP_RESET;
     }
   }

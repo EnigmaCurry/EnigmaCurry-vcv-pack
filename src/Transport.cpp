@@ -276,25 +276,34 @@ struct TransportDisplay : public DynamicOverlay {
   }
 
   void draw(const DrawArgs &args) override {
-    if (!module)
-      return;
-    DynamicOverlay::clear();
-    std::string recordLength = pad(module->recordLength);
-    std::string playCount = pad(module->playCount);
-    std::string recCount = pad(module->recCount);
+    Vec topTextLoc = transportGrid.loc(4, 7).minus(Vec(8, -15));
+    Vec bottomTextLoc = transportGrid.loc(8, 7).minus(Vec(8, -15));
+    if (module) {
+      DynamicOverlay::clear();
+      std::string recordLength = pad(module->recordLength);
+      std::string playCount = pad(module->playCount);
+      std::string recCount = pad(module->recCount);
 
-    addText(recordLength, 25, transportGrid.loc(4, 7).minus(Vec(8, -15)),
-            (!module->bypassRecordLength && module->recordLength > 0) ? RED
-                                                                      : WHITE,
-            CLEAR, DSEG);
-    if (module->armed) {
-      addText(recCount, 25, transportGrid.loc(8, 7).minus(Vec(8, -15)), RED, CLEAR,
-              DSEG);
+      addText(recordLength, 25, topTextLoc,
+              (!module->bypassRecordLength && module->recordLength > 0) ? RED
+              : WHITE,
+              CLEAR, DSEG);
+      if (module->armed) {
+        addText(recCount, 25, bottomTextLoc, RED, CLEAR,
+                DSEG);
+      } else {
+        addText(playCount, 25, bottomTextLoc, WHITE, CLEAR,
+                DSEG);
+      }
+      DynamicOverlay::draw(args);
     } else {
-      addText(playCount, 25, transportGrid.loc(8, 7).minus(Vec(8, -15)), WHITE, CLEAR,
+      // Draw example when module is inacative (for module browser):
+      addText(pad(4), 25, topTextLoc,
+              WHITE, CLEAR, DSEG);
+      addText(pad(13), 25, bottomTextLoc, WHITE, CLEAR,
               DSEG);
+      DynamicOverlay::draw(args);
     }
-    DynamicOverlay::draw(args);
   }
 };
 

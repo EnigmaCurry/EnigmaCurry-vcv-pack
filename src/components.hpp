@@ -31,6 +31,10 @@ extern NVGcolor RED_TRANSPARENT;
 extern NVGcolor BLACK;
 extern NVGcolor BLACK_TRANSPARENT;
 extern NVGcolor CLEAR;
+extern NVGcolor PURPLE;
+extern NVGcolor BLUE;
+extern NVGcolor YELLOW;
+extern NVGcolor PINK;
 
 enum fonts { MANROPE, DSEG, FANTASQUE };
 
@@ -72,6 +76,7 @@ typedef struct {
   rack::Vec start;
   rack::Vec end;
   NVGcolor color;
+  int roundness;
 } draw_box;
 
 struct DynamicOverlay : rack::TransparentWidget {
@@ -91,8 +96,8 @@ struct DynamicOverlay : rack::TransparentWidget {
                NVGcolor bgColor) {
     addText(text, size, px, color, bgColor, FANTASQUE);
   }
-  void addBox(rack::Vec start, rack::Vec end, NVGcolor color) {
-    box_calls.push_back({start, end, color});
+  void addBox(rack::Vec start, rack::Vec end, NVGcolor color, int roundness) {
+    box_calls.push_back({start, end, color, roundness});
   }
   void drawText(const DrawArgs &args, draw_text dt) {
     std::shared_ptr<Font> font;
@@ -138,7 +143,7 @@ struct DynamicOverlay : rack::TransparentWidget {
   void drawBox(const DrawArgs &args, draw_box db) {
     nvgBeginPath(args.vg);
     nvgFillColor(args.vg, db.color);
-    nvgRoundedRect(args.vg, db.start.x, db.start.y, db.end.x, db.end.y, 10);
+    nvgRoundedRect(args.vg, db.start.x, db.start.y, db.end.x, db.end.y, db.roundness);
     nvgFill(args.vg);
     nvgClosePath(args.vg);
   }

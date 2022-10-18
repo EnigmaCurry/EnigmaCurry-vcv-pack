@@ -30,6 +30,15 @@
             "tags": [
                 "Utility", "Polyphonic", "Dual", "Switch"
             ]
+        },
+        {
+            "slug": "Pulse",
+            "name": "Pulse",
+            "description": "Trigger a gate signal with a clocked length",
+            "manualUrl": "https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/blob/v2/README.md#pulse",
+            "tags": [
+                "Utility", "Envelope generator"
+            ]
         }
     ]
 }

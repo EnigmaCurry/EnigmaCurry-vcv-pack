@@ -1,3 +1,11 @@
+2.0.8
+
+ * Transport: renders example display for module browser
+ * Transport: set default `On Start` action as `No action`. For the
+   intended default use, the reset signal means to stop. So it made
+   no sense to send stop on start.
+ * Adds Pulse module.
+
 2.0.7
 
  * Store the actual playCount as modulo 1000.

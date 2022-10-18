@@ -397,7 +397,7 @@ struct TransportWidget : ModuleWidget {
                        RED_TRANSPARENT);
       overlay->addBox(lengthDisplayLoc.plus(Vec(-43, -35)),
                       playLengthDisplayLoc.plus(Vec(-40, -15)),
-                      BLACK_TRANSPARENT);
+                      BLACK_TRANSPARENT, 10);
       buffer->addChild(overlay);
       addChild(buffer);
     }
@@ -501,8 +501,8 @@ struct TransportWidget : ModuleWidget {
         createClockDividerSelection(menu, module, "8", 8);
         createClockDividerSelection(menu, module, "12", 12);
         createClockDividerSelection(menu, module, "16", 16);
-        createClockDividerSelection(menu, module, "24 PPQN (MIDI-CV CLK)", 24 * 4);
-        createClockDividerSelection(menu, module, "48 PPQN", 48 * 4);
+        createClockDividerSelection(menu, module, "96 (24 PPQN, MIDI-CV CLK)", 24 * 4);
+        createClockDividerSelection(menu, module, "192 (48 PPQN)", 48 * 4);
         return menu;
       }
     };

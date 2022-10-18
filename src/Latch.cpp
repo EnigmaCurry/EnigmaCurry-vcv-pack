@@ -100,17 +100,17 @@ struct LatchWidget : ModuleWidget {
       DynamicOverlay *overlay = new DynamicOverlay(HP);
       overlay->addText("Latch", 20, Vec(mm2px(HP * HP_UNIT / 2), 25), WHITE,
                        CLEAR, MANROPE);
-      overlay->addText("TRIG", 13, trig1Loc.minus(Vec(0, 17)), WHITE,
+      overlay->addText("TRIG", 13, trig1Loc.minus(Vec(0, 20)), WHITE,
                        RED_TRANSPARENT);
-      overlay->addText("RESET", 13, reset1Loc.minus(Vec(0, 17)), WHITE,
+      overlay->addText("RESET", 13, reset1Loc.minus(Vec(0, 20)), WHITE,
                        RED_TRANSPARENT);
-      overlay->addText("LATCH", 13, latch1Loc.minus(Vec(0, 17)), WHITE,
+      overlay->addText("LATCH", 13, latch1Loc.minus(Vec(0, 20)), WHITE,
                        BLACK_TRANSPARENT);
-      overlay->addText("TRIG", 13, trig2Loc.minus(Vec(0, 17)), WHITE,
+      overlay->addText("TRIG", 13, trig2Loc.minus(Vec(0, 20)), WHITE,
                        RED_TRANSPARENT);
-      overlay->addText("RESET", 13, reset2Loc.minus(Vec(0, 17)), WHITE,
+      overlay->addText("RESET", 13, reset2Loc.minus(Vec(0, 20)), WHITE,
                        RED_TRANSPARENT);
-      overlay->addText("LATCH", 13, latch2Loc.minus(Vec(0, 17)), WHITE,
+      overlay->addText("LATCH", 13, latch2Loc.minus(Vec(0, 20)), WHITE,
                        BLACK_TRANSPARENT);
 
       buffer->addChild(overlay);
@@ -120,4 +120,3 @@ struct LatchWidget : ModuleWidget {
 };
 
 Model *modelLatch = createModel<Latch, LatchWidget>("Latch");
-

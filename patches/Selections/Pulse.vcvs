@@ -1,0 +1,494 @@
+{
+  "modules": [
+    {
+      "id": 1313788994990319,
+      "plugin": "Fundamental",
+      "model": "Scope",
+      "version": "2.0.0",
+      "params": [
+        {
+          "value": 0.0,
+          "id": 0
+        },
+        {
+          "value": 0.0,
+          "id": 1
+        },
+        {
+          "value": 0.0,
+          "id": 2
+        },
+        {
+          "value": 0.0,
+          "id": 3
+        },
+        {
+          "value": 7.6438560485839844,
+          "id": 4
+        },
+        {
+          "value": 0.0,
+          "id": 5
+        },
+        {
+          "value": 0.0,
+          "id": 6
+        },
+        {
+          "value": 1.0,
+          "id": 7
+        }
+      ],
+      "leftModuleId": 4628026018760101,
+      "pos": [
+        38,
+        0
+      ]
+    },
+    {
+      "id": 16090642463550,
+      "plugin": "LittleUtils",
+      "model": "Button",
+      "version": "2.0.0",
+      "params": [
+        {
+          "value": 0.0,
+          "id": 0
+        }
+      ],
+      "leftModuleId": 1892765443722079,
+      "rightModuleId": 1556104146111684,
+      "data": {
+        "toggle": false,
+        "const_choice": 0
+      },
+      "pos": [
+        29,
+        0
+      ]
+    },
+    {
+      "id": 1278508057824129,
+      "plugin": "Fundamental",
+      "model": "Merge",
+      "version": "2.0.0",
+      "params": [],
+      "leftModuleId": 5630248236345360,
+      "rightModuleId": 1892765443722079,
+      "data": {
+        "channels": -1
+      },
+      "pos": [
+        19,
+        0
+      ]
+    },
+    {
+      "id": 4628026018760101,
+      "plugin": "LittleUtils",
+      "model": "Button",
+      "version": "2.0.0",
+      "params": [
+        {
+          "value": 0.0,
+          "id": 0
+        }
+      ],
+      "leftModuleId": 1556104146111684,
+      "rightModuleId": 1313788994990319,
+      "data": {
+        "toggle": false,
+        "const_choice": 2
+      },
+      "pos": [
+        35,
+        0
+      ]
+    },
+    {
+      "id": 5630248236345360,
+      "plugin": "ImpromptuModular",
+      "model": "Clocked-Clkd",
+      "version": "2.0.3",
+      "params": [
+        {
+          "value": 0.0,
+          "id": 0
+        },
+        {
+          "value": 0.0,
+          "id": 1
+        },
+        {
+          "value": 0.0,
+          "id": 2
+        },
+        {
+          "value": 120.0,
+          "id": 3
+        },
+        {
+          "value": 0.0,
+          "id": 4
+        },
+        {
+          "value": 0.0,
+          "id": 5
+        },
+        {
+          "value": 0.0,
+          "id": 6
+        },
+        {
+          "value": 0.0,
+          "id": 7
+        },
+        {
+          "value": 0.0,
+          "id": 8
+        },
+        {
+          "value": 0.0,
+          "id": 9
+        }
+      ],
+      "rightModuleId": 1278508057824129,
+      "data": {
+        "panelTheme": 0,
+        "panelContrast": 220.0,
+        "running": true,
+        "bpmDetectionMode": false,
+        "resetOnStartStop": 0,
+        "ppqn": 4,
+        "resetClockOutputsHigh": true,
+        "momentaryRunInput": true,
+        "displayIndex": 0,
+        "trigOuts": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "clockMaster": -1
+      },
+      "pos": [
+        9,
+        0
+      ]
+    },
+    {
+      "id": 1892765443722079,
+      "plugin": "Fundamental",
+      "model": "Merge",
+      "version": "2.0.0",
+      "params": [],
+      "leftModuleId": 1278508057824129,
+      "rightModuleId": 16090642463550,
+      "data": {
+        "channels": -1
+      },
+      "pos": [
+        24,
+        0
+      ]
+    },
+    {
+      "id": 1556104146111684,
+      "plugin": "EnigmaCurry",
+      "model": "Pulse",
+      "version": "2.0.7",
+      "params": [
+        {
+          "value": 4.0,
+          "id": 0
+        }
+      ],
+      "leftModuleId": 16090642463550,
+      "rightModuleId": 4628026018760101,
+      "data": {
+        "clockDivider": 4,
+        "trigQuantize": 1,
+        "onRetriggerAction": 0
+      },
+      "pos": [
+        32,
+        0
+      ]
+    },
+    {
+      "id": 5492988607119348,
+      "plugin": "Core",
+      "model": "Notes",
+      "version": "2.1.2",
+      "params": [],
+      "data": {
+        "text": "Pulse Example -\nthis has 10 triggers (with 6 of the 16 available channels disconnected on purpose.)\n\nThe clock is set to 120BPM. Pulse is set to gate for 4 bars. 4 bars at 120BPM equals 8 seconds.\n\nClick the first button (btn) and Pulse will start a gate on the next clock cycle and the keep it high for 4 bars. At the end of the pulse, the clock below should read exactly 8.000.\n\nClick the second button (btn) to reset.\n\nTry different clock dividers in the menu of Pulse.\n"
+      },
+      "pos": [
+        56,
+        0
+      ]
+    },
+    {
+      "id": 8161453718168180,
+      "plugin": "NYSTHI",
+      "model": "ExpiredTime",
+      "version": "2.1.19",
+      "params": [
+        {
+          "value": 0.0,
+          "id": 0
+        },
+        {
+          "value": 0.0,
+          "id": 1
+        }
+      ],
+      "leftModuleId": 154626310057809,
+      "data": {
+        "m_timer_start_on_open": false,
+        "m_timer1_hours": 0,
+        "m_timer1_minutes": 0,
+        "m_timer1_seconds": 0,
+        "m_timer2_hours": 0,
+        "m_timer2_minutes": 0,
+        "m_timer2_seconds": 0,
+        "m_timer3_hours": 0,
+        "m_timer3_minutes": 0,
+        "m_timer3_seconds": 0
+      },
+      "pos": [
+        18,
+        1
+      ]
+    },
+    {
+      "id": 2043427930919156,
+      "plugin": "Bogaudio",
+      "model": "Bogaudio-Edge",
+      "version": "2.0.39",
+      "params": [
+        {
+          "value": 0.10000000149011612,
+          "id": 0
+        },
+        {
+          "value": 0.0099999997764825821,
+          "id": 1
+        },
+        {
+          "value": 0.031622998416423798,
+          "id": 2
+        }
+      ],
+      "rightModuleId": 5493600885539712,
+      "data": {},
+      "pos": [
+        9,
+        1
+      ]
+    },
+    {
+      "id": 154626310057809,
+      "plugin": "Fundamental",
+      "model": "Sum",
+      "version": "2.0.0",
+      "params": [
+        {
+          "value": 1.0,
+          "id": 0
+        }
+      ],
+      "leftModuleId": 5493600885539712,
+      "rightModuleId": 8161453718168180,
+      "pos": [
+        15,
+        1
+      ]
+    },
+    {
+      "id": 5493600885539712,
+      "plugin": "Bogaudio",
+      "model": "Bogaudio-Bool",
+      "version": "2.0.39",
+      "params": [],
+      "leftModuleId": 2043427930919156,
+      "rightModuleId": 154626310057809,
+      "data": {},
+      "pos": [
+        12,
+        1
+      ]
+    }
+  ],
+  "cables": [
+    {
+      "id": 2207458744240276,
+      "outputModuleId": 16090642463550,
+      "outputId": 0,
+      "inputModuleId": 1278508057824129,
+      "inputId": 4,
+      "color": "#fc2d5a"
+    },
+    {
+      "id": 354085458919704,
+      "outputModuleId": 16090642463550,
+      "outputId": 0,
+      "inputModuleId": 1278508057824129,
+      "inputId": 5,
+      "color": "#fc2d5a"
+    },
+    {
+      "id": 7692611394639256,
+      "outputModuleId": 16090642463550,
+      "outputId": 0,
+      "inputModuleId": 1278508057824129,
+      "inputId": 6,
+      "color": "#fc2d5a"
+    },
+    {
+      "id": 5841475478110464,
+      "outputModuleId": 16090642463550,
+      "outputId": 0,
+      "inputModuleId": 1278508057824129,
+      "inputId": 7,
+      "color": "#fc2d5a"
+    },
+    {
+      "id": 585880033032418,
+      "outputModuleId": 16090642463550,
+      "outputId": 0,
+      "inputModuleId": 1278508057824129,
+      "inputId": 8,
+      "color": "#fc2d5a"
+    },
+    {
+      "id": 8024783820844087,
+      "outputModuleId": 16090642463550,
+      "outputId": 0,
+      "inputModuleId": 1278508057824129,
+      "inputId": 9,
+      "color": "#fc2d5a"
+    },
+    {
+      "id": 5250680861387760,
+      "outputModuleId": 16090642463550,
+      "outputId": 0,
+      "inputModuleId": 1278508057824129,
+      "inputId": 10,
+      "color": "#fc2d5a"
+    },
+    {
+      "id": 8379322579117887,
+      "outputModuleId": 16090642463550,
+      "outputId": 0,
+      "inputModuleId": 1278508057824129,
+      "inputId": 13,
+      "color": "#fc2d5a"
+    },
+    {
+      "id": 1993750419320741,
+      "outputModuleId": 16090642463550,
+      "outputId": 0,
+      "inputModuleId": 1278508057824129,
+      "inputId": 14,
+      "color": "#fc2d5a"
+    },
+    {
+      "id": 3371052638101684,
+      "outputModuleId": 16090642463550,
+      "outputId": 0,
+      "inputModuleId": 1278508057824129,
+      "inputId": 15,
+      "color": "#fc2d5a"
+    },
+    {
+      "id": 622471646304658,
+      "outputModuleId": 16090642463550,
+      "outputId": 0,
+      "inputModuleId": 1892765443722079,
+      "inputId": 15,
+      "color": "#fc2d5a"
+    },
+    {
+      "id": 7576938492376182,
+      "outputModuleId": 1556104146111684,
+      "outputId": 0,
+      "inputModuleId": 1313788994990319,
+      "inputId": 0,
+      "color": "#67c12d"
+    },
+    {
+      "id": 8634401127231585,
+      "outputModuleId": 4628026018760101,
+      "outputId": 0,
+      "inputModuleId": 1556104146111684,
+      "inputId": 1,
+      "color": "#fc2d5a"
+    },
+    {
+      "id": 1225800763884866,
+      "outputModuleId": 1556104146111684,
+      "outputId": 0,
+      "inputModuleId": 2043427930919156,
+      "inputId": 0,
+      "color": "#f9b130"
+    },
+    {
+      "id": 1062677141831091,
+      "outputModuleId": 154626310057809,
+      "outputId": 0,
+      "inputModuleId": 8161453718168180,
+      "inputId": 0,
+      "color": "#67c12d"
+    },
+    {
+      "id": 7603062738505256,
+      "outputModuleId": 2043427930919156,
+      "outputId": 1,
+      "inputModuleId": 5493600885539712,
+      "inputId": 0,
+      "color": "#8c1889"
+    },
+    {
+      "id": 1273346675603319,
+      "outputModuleId": 2043427930919156,
+      "outputId": 2,
+      "inputModuleId": 5493600885539712,
+      "inputId": 1,
+      "color": "#f9b130"
+    },
+    {
+      "id": 7977018994291893,
+      "outputModuleId": 4628026018760101,
+      "outputId": 0,
+      "inputModuleId": 8161453718168180,
+      "inputId": 1,
+      "color": "#0f8df4"
+    },
+    {
+      "id": 7208442428957868,
+      "outputModuleId": 5493600885539712,
+      "outputId": 1,
+      "inputModuleId": 154626310057809,
+      "inputId": 0,
+      "color": "#67c12d"
+    },
+    {
+      "id": 4204902768314882,
+      "outputModuleId": 1278508057824129,
+      "outputId": 0,
+      "inputModuleId": 1556104146111684,
+      "inputId": 0,
+      "color": "#f9b130"
+    },
+    {
+      "id": 7668739127511591,
+      "outputModuleId": 5630248236345360,
+      "outputId": 0,
+      "inputModuleId": 1556104146111684,
+      "inputId": 2,
+      "color": "#fc2d5a"
+    }
+  ]
+}

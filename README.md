@@ -5,6 +5,7 @@ This is my collection of modules for [VCV Rack](https://vcvrack.com/):
 
  * [Transport](#Transport)
  * [Latch](#Latch)
+ * [Pulse](#Pulse)
 
 [These modules are freely available in the VCV Rack
 Library.](https://library.vcvrack.com/?brand=EnigmaCurry)
@@ -223,4 +224,67 @@ RESET inputs from Pulses:
 
 You can download this as a [VCV Rack selection
 `.vcvs`](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/raw/v2/patches/Selections/Latch%20Demonstration.vcvs)
+
+
+### Pulse
+
+Pulse is a bank of 16 pulse generators: they turn triggers into gates
+with a clocked length. It has 16 independent trigger inputs (`TRIG`)
+and 16 gate outputs (`GATE`) via polyphonic jacks. A single `LENGTH`
+parameter controls the length of each gate (1 -> 128). Although the
+gates must all share the same length, they are triggered and held
+independently. Use the external `CLOCK` signal, and the built-in clock
+divider, and pulse will count the exact amount of time to keep each
+gate open. A shared `RESET` input will immediately reset all of the
+gates and the clock.
+
+![Pulse](screenshots/Pulse.png)
+
+Pulse is kind of like a smaller version of [Transport](#Transport),
+but with the addition of 16 independent triggers and gates. It can
+count clock cycles, like bars of music, or individual beats. You can
+use it as the sustain input to an envelope generator, or a gate input
+on a sampler (The pulse itself is always a square wave). The gate
+interval is configured by the shared `LENGTH` parameter knob. It has
+an internal clock divider to configure any common clock resolution.
+
+The display on Pulse has three rows:
+
+ 1. The length parameter used for all of the gates (in red).
+ 2. The current progress of the gates being held: in yellow, if there
+    is only one gate active (on any output); in pink, if there is more
+    than one gate active (only the first displayed).
+ 3. The clock counter / clock divider (in white). (Only visisble when
+    the clock divider is greater than 1.)
+
+In the menu, the triggers can be quantized to the next bar, or x2, x4,
+x8 etc. With quantization turned on, incoming trigs will wait to start
+the gate on the clock. With quantization turned `OFF`, triggers will
+fire and hold gates immediately, even before the next clock phase, and
+then hold normally for the entire gate length in addition. Thus, with
+quantization turned off, the gate will always be a little bit longer
+than the length set. For perfect divisions of your clock, always use
+quantization.
+
+You can configure what to do on a re-trigger event for a gate that has
+already been triggered. There are three options for `On Re-trigger
+during gate` option in the menu:
+
+ * `New Trigger` - Continue the gate starting at fresh count of 1.
+ * `No New Trigger` - Ignore the new trigger, keeping the original count.
+ * `Reset` - Ignore the new trigger, and reset the existing gate on
+   the next clock phase. (This turns each trig input into a toggle
+   switch with clocked time resolution.)
+
+Here is a demonstration of the independent triggers and gates. Just
+like in the example used for the timing of Transport, this example
+sets Pulse to a gate of 4 bars. The clock is set for 120 BPM. Assuming
+that its setup correctly, the timer circuit will watch the gate length
+time and show it as exactly 8 seconds.
+
+![Pulse Polyphonic Demonstration](screenshots/PulsePolyphonicDemonstration.png)
+
+You can download this as a [VCV Rack selection
+`.vcvs`](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/raw/v2/patches/Selections/Pulse.vcvs)
+
 

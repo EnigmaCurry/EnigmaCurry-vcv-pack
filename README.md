@@ -229,50 +229,66 @@ You can download this as a [VCV Rack selection
 ### Pulse
 
 Pulse is a bank of 16 pulse generators: they turn triggers into gates
-with a clocked length. It has 16 independent trigger inputs (`TRIG`)
-and 16 gate outputs (`GATE`) via polyphonic jacks. A single `LENGTH`
-parameter controls the length of each gate (1 -> 128). Although the
-gates must all share the same length, they are triggered and held
-independently. Use the external `CLOCK` signal, and the built-in clock
-divider, and pulse will count the exact amount of time to keep each
-gate open. A shared `RESET` input will immediately reset all of the
-gates and the clock.
+with a single shared clocked length. Using 16 channel polyphony, Pulse
+has 16 `TRIG` inputs, 16 `GATE` outputs, and 16 `END` outputs. The
+triggers are quantized to the incoming clock with configurable
+resolution. The `GATE` outputs are held high for the duration of each
+independent pulse. The `END` outputs are triggered on the clock cycle
+immediately preceding the end of each gate. A single `LENGTH`
+parameter controls the length (1 -> 128) of each gate. All of the
+gates must share the same length, however they are triggered and held
+independently of each other. Use the external `CLOCK` signal, and the
+built-in clock divider, and pulse will count the exact amount of time
+to keep each gate open at different times. A shared `RESET` input will
+immediately reset all of the gates and the clock.
 
 ![Pulse](screenshots/Pulse.png)
 
 Pulse is kind of like a smaller version of [Transport](#Transport),
 but with the addition of 16 independent triggers and gates. It can
-count clock cycles, like bars of music, or individual beats. You can
-use it as the sustain input to an envelope generator, or a gate input
-on a sampler (The pulse itself is always a square wave). The gate
-interval is configured by the shared `LENGTH` parameter knob. It has
-an internal clock divider to configure any common clock resolution.
+count clock cycles, like bars of music, or individual beats. It holds
+the `GATE` outputs high for the duration you choose. For example, you
+can use it as the sustain input to an envelope generator, or as a gate
+input on a sampler. (The pulse itself is always a square wave). The
+gate interval is configured by the shared `LENGTH` parameter knob. It
+has an internal clock divider to configure any common clock
+resolution.
 
 The display on Pulse has three rows:
 
  1. The length parameter used for all of the gates (in red).
- 2. The current progress of the gates being held: in yellow, if there
-    is only one gate active (on any output); in pink, if there is more
-    than one gate active (only the first displayed).
+ 2. The current progress of the top most gate being held. If there is
+    only one gate active (on any output) the display is yellow; If
+    there is more than one gate active, the display is pink (but only
+    shows one counter displaying the lowest numbered active channel).
  3. The clock counter / clock divider (in white). (Only visisble when
     the clock divider is greater than 1.)
+
+The `END` output triggers at the start of the final clock cycle of the
+pulse gate, to signal that the pulse is scheduled to end on the next
+clock cycle. You can daisy chain several Pulse modules together, to
+fire sequentially, by wiring the `END` output of one into the `TRIG`
+input of another (each Pulse module must share the same clock source,
+but each can have different lengths). If you were to self-patch the
+`END` output back into the `TRIG` input of the same Pulse module, the
+pulse gate would loop forever.
 
 In the menu, the triggers can be quantized to the next bar, or x2, x4,
 x8 etc. With quantization turned on, incoming trigs will wait to start
 the gate on the clock. With quantization turned `OFF`, triggers will
 fire and hold gates immediately, even before the next clock phase, and
-then hold normally for the entire gate length in addition. Thus, with
-quantization turned off, the gate will always be a little bit longer
-than the length set. For perfect divisions of your clock, always use
-quantization.
+then hold normally for the entire gate length in addition to that.
+Thus, with quantization turned `OFF`, the gate will always be a little
+bit longer than the length set. For perfect divisions of your clock,
+always use quantization.
 
 You can configure what to do on a re-trigger event for a gate that has
-already been triggered. There are three options for `On Re-trigger
-during gate` option in the menu:
+already been triggered and with gate already in progress: there are
+three choices for the `On Re-trigger during gate` option in the menu:
 
- * `New Trigger` - Continue the gate starting at fresh count of 1.
+ * `New Trigger` - Continue the gate and reset the count to 1.
  * `No New Trigger` - Ignore the new trigger, keeping the original count.
- * `Reset` - Ignore the new trigger, and reset the existing gate on
+ * `Reset` - Ignore the new trigger, but reset the existing gate on
    the next clock phase. (This turns each trig input into a toggle
    switch with clocked time resolution.)
 
@@ -286,5 +302,4 @@ time and show it as exactly 8 seconds.
 
 You can download this as a [VCV Rack selection
 `.vcvs`](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/raw/v2/patches/Selections/Pulse.vcvs)
-
 

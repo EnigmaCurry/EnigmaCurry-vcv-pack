@@ -20,14 +20,16 @@
 #include "components.hpp"
 #include "plugin.hpp"
 #include <string>
+#define TRIGGER_DURATION 1e-3f
 
 struct Pulse : Module {
   enum ParamIds { LEN, NUM_PARAMS };
   enum InputIds { TRIG, RESET, CLOCK, NUM_INPUTS };
-  enum OutputIds { GATE, NUM_OUTPUTS };
+  enum OutputIds { GATE, END, NUM_OUTPUTS };
   enum LightIds { NUM_LIGHTS };
   enum OnRetriggerActionIds { ON_RETRIGGER_NEW_TRIGGER, ON_RETRIGGER_NO_NEW_TRIGGER, ON_RETRIGGER_RESET};
   dsp::SchmittTrigger clockTrigger, trigTrigger[16], resetTrigger;
+  dsp::PulseGenerator endPulse[16];
   int pulseLength = 1;
   int pulseCountMod = 0;
   int clockDivider = 1;
@@ -45,11 +47,14 @@ struct Pulse : Module {
     configInput(TRIG, "TRIG");
     configInput(RESET, "RESET");
     configOutput(GATE, "GATE");
+    configOutput(END, "END");
     reset();
   }
 
   void process(const ProcessArgs &args) override {
     int channels = inputs[TRIG].getChannels();
+    outputs[GATE].setChannels(channels);
+    outputs[END].setChannels(channels);
     // LENGTH
     pulseLength = int(params[LEN].getValue());
     // CLOCK
@@ -61,13 +66,15 @@ struct Pulse : Module {
         for(int i=0; i < 16; i++) {
           // Reset the unclocked trigs that occured before the clock:
           unclockedTrigs[i] = false;
-          if (i <= channels && trigTrigger[i].process(inputs[TRIG].getPolyVoltage(i) >= 1.f)) {
+          if (i < channels && trigTrigger[i].process(inputs[TRIG].getNormalPolyVoltage(0.0, i) >= 1.f)) {
             // Handle trigs coincidential with the clock rising edge:
             trigQueue[i] = 0;
           }
           if (gateProgress[i] == pulseLength - 1) {
+            // Pulse finished:
             gateProgress[i] = -1;
           } else if (gateProgress[i] >= 0) {
+            // Pulse ongoing:
             gateProgress[i] += 1;
           }
           if (trigQueue[i] < 0) {
@@ -76,7 +83,7 @@ struct Pulse : Module {
             // Trig is scheduled, but its not time yet:
             trigQueue[i] -= 1;
           } else {
-            //Time to trig now:
+            //Time to trig now - trigQueue[i] == 0
             if (gateProgress[i] == -1 || \
                 onRetriggerAction == ON_RETRIGGER_NEW_TRIGGER) {
               gateProgress[i] = 0;
@@ -87,10 +94,18 @@ struct Pulse : Module {
           }
         }
       }
+      // END
+      if (clockCountMod == clockDivider - 1) {
+        for (int i=0; i<channels; i++) {
+          if (gateProgress[i] == pulseLength - 1) {
+            endPulse[i].trigger(TRIGGER_DURATION);
+          }
+        }
+      }
     } else {
       // Handle trigs that occur in between clock pulses:
       for (int i = 0; i < channels; i++) {
-        if (trigTrigger[i].process(inputs[TRIG].getPolyVoltage(i) >= 1.f)) {
+        if (i < channels && trigTrigger[i].process(inputs[TRIG].getNormalPolyVoltage(0.0, i) >= 1.f)) {
           trigQueue[i] = (trigQuantize < 1 ? 1 : trigQuantize) - (pulseCountMod == -1 ? 0 : pulseCountMod) - 1;
           unclockedTrigs[i] = trigQuantize == 0;
         }
@@ -100,10 +115,11 @@ struct Pulse : Module {
     if (resetTrigger.process(inputs[RESET].getNormalVoltage(0.0))) {
       reset();
     }
-    // GATE
-    outputs[GATE].setChannels(channels);
     for (int i=0; i < 16; i++) {
+      // GATE:
       outputs[GATE].setVoltage((unclockedTrigs[i] || gateProgress[i] >= 0) ? 10.f : 0.f, i);
+      // END trigger:
+      outputs[END].setVoltage(endPulse[i].process(args.sampleTime) ? 10.f : 0.f, i);
     }
   }
 
@@ -142,7 +158,7 @@ struct Pulse : Module {
 
 
 #define HP 3
-#define ROWS 14
+#define ROWS 256
 #define COLUMNS 1
 panel_grid<HP, ROWS, COLUMNS> pulseGrid;
 
@@ -187,9 +203,10 @@ struct PulseDisplay : public DynamicOverlay {
   PulseDisplay(int hp_width) : DynamicOverlay(hp_width) {}
 
   void draw(const DrawArgs &args) override {
-    Vec lengthTextLoc = pulseGrid.loc(1, 0).plus(Vec(0,8));
-    Vec pulseCountTextLoc = pulseGrid.loc(1, 0).plus(Vec(0,24));
-    Vec clockCountTextLoc = pulseGrid.loc(1,0).plus(Vec(0, 40));
+    Vec displayLoc = pulseGrid.loc(20,0).plus(Vec(0,6));
+    Vec lengthTextLoc = displayLoc.plus(Vec(0,8));
+    Vec pulseCountTextLoc = displayLoc.plus(Vec(0,24));
+    Vec clockCountTextLoc = displayLoc.plus(Vec(0, 40));
     if (module) {
       DynamicOverlay::clear();
       addText(pulsePad(module->pulseLength), 12, lengthTextLoc,
@@ -225,14 +242,16 @@ struct PulseDisplay : public DynamicOverlay {
 };
 
 struct PulseWidget : ModuleWidget {
-  Vec displayLoc = pulseGrid.loc(1,0);
-  Vec lenLoc = pulseGrid.loc(4,0);
+  Vec displayLoc = pulseGrid.loc(20,0).plus(Vec(0,6));
+  Vec lenLoc = pulseGrid.loc(76,0);
+  int o = 105;
+  int h = 28;
+  Vec clockLoc = pulseGrid.loc(o, 0);
+  Vec trigLoc = pulseGrid.loc(o+h, 0);
 
-  Vec clockLoc = pulseGrid.loc(6, 0);
-  Vec trigLoc = pulseGrid.loc(8, 0);
-
-  Vec resetLoc = pulseGrid.loc(10, 0);
-  Vec gateLoc = pulseGrid.loc(12,0);
+  Vec resetLoc = pulseGrid.loc(o+h*2, 0);
+  Vec gateLoc = pulseGrid.loc(o+h*3,0);
+  Vec endLoc = pulseGrid.loc(o+h*4,0);
   // Vec pulseDisplayTopLeft = pulseGrid.loc(, 0).minus(Vec(7,10));
   // Vec pulseDisplayBottomRight = pulseGrid.loc(3, 1).plus(Vec(3,10));
 
@@ -242,6 +261,7 @@ struct PulseWidget : ModuleWidget {
     addInput(createInputCentered<PJ301MPort>(resetLoc, module, Pulse::RESET));
     addInput(createInputCentered<PJ301MPort>(clockLoc, module, Pulse::CLOCK));
     addOutput(createOutputCentered<PJ301MPort>(gateLoc, module, Pulse::GATE));
+    addOutput(createOutputCentered<PJ301MPort>(endLoc, module, Pulse::END));
     setPanel(
              APP->window->loadSvg(asset::plugin(pluginInstance, "res/3hp.svg")));
     addParam(
@@ -253,16 +273,18 @@ struct PulseWidget : ModuleWidget {
       DynamicOverlay *overlay = new DynamicOverlay(HP);
       overlay->addText("Pulse", 20, Vec(mm2px(HP * HP_UNIT / 2), 25), WHITE,
                        CLEAR, MANROPE);
-      overlay->addText("LENGTH", 12, lenLoc.minus(Vec(0, 20)), WHITE,
-                       RED_TRANSPARENT);
-      overlay->addText("CLOCK", 13, clockLoc.minus(Vec(0, 20)), WHITE,
-                       RED_TRANSPARENT);
-      overlay->addText("TRIG", 13, trigLoc.minus(Vec(0, 20)), WHITE,
-                       RED_TRANSPARENT);
-      overlay->addText("RESET", 13, resetLoc.minus(Vec(0, 20)), WHITE,
-                       RED_TRANSPARENT);
-      overlay->addText("GATE", 13, gateLoc.minus(Vec(0, 20)), WHITE,
-                       BLACK_TRANSPARENT);
+      overlay->addText("LENGTH", 9, lenLoc.minus(Vec(0, 20)), WHITE,
+                       RED_TRANSPARENT, FANTASQUE, 0);
+      overlay->addText("CLOCK", 9, clockLoc.minus(Vec(0, 15)), WHITE,
+                       RED_TRANSPARENT, FANTASQUE, 0);
+      overlay->addText("TRIG", 9, trigLoc.minus(Vec(0, 15)), WHITE,
+                       RED_TRANSPARENT, FANTASQUE, 0);
+      overlay->addText("RESET", 9, resetLoc.minus(Vec(0, 15)), WHITE,
+                       RED_TRANSPARENT, FANTASQUE, 0);
+      overlay->addText("GATE", 9, gateLoc.minus(Vec(0, 15)), WHITE,
+                       BLACK_TRANSPARENT, FANTASQUE, 0);
+      overlay->addText("END", 9, endLoc.minus(Vec(0, 15)), WHITE,
+                       BLACK_TRANSPARENT, FANTASQUE, 0);
       buffer->addChild(overlay);
       addChild(buffer);
       overlay->addBox(displayLoc.minus(Vec(18,8)),

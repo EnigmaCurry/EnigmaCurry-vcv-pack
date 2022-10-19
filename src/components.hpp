@@ -70,6 +70,7 @@ typedef struct {
   NVGcolor color;
   int font;
   NVGcolor bgColor;
+  float padding;
 } draw_text;
 
 typedef struct {
@@ -89,12 +90,16 @@ struct DynamicOverlay : rack::TransparentWidget {
     box.size = mm2px(Vec(hp_width * HP_UNIT, HEIGHT));
   }
   void addText(std::string text, int size, rack::Vec px, NVGcolor color,
+               NVGcolor bgColor, int font, float padding) {
+    text_calls.push_back({text, size, px, color, font, bgColor, padding});
+  }
+  void addText(std::string text, int size, rack::Vec px, NVGcolor color,
                NVGcolor bgColor, int font) {
-    text_calls.push_back({text, size, px, color, font, bgColor});
+    text_calls.push_back({text, size, px, color, font, bgColor, 1.0});
   }
   void addText(std::string text, int size, rack::Vec px, NVGcolor color,
                NVGcolor bgColor) {
-    addText(text, size, px, color, bgColor, FANTASQUE);
+    addText(text, size, px, color, bgColor, FANTASQUE, 1);
   }
   void addBox(rack::Vec start, rack::Vec end, NVGcolor color, int roundness) {
     box_calls.push_back({start, end, color, roundness});
@@ -129,10 +134,17 @@ struct DynamicOverlay : rack::TransparentWidget {
     // draw background:
     if (dt.bgColor.a != 0) {
       nvgFillColor(args.vg, dt.bgColor);
-      nvgRoundedRect(args.vg, (int)bounds[0] - 2 - x_offset, (int)bounds[1] - 2,
-                     (int)(bounds[2] - bounds[0]) + 5,
-                     (int)(bounds[3] - bounds[1]) + 5,
-                     ((int)(bounds[3] - bounds[1]) - 1) / 2 - 1);
+      if (dt.padding < 1) {
+        nvgRoundedRect(args.vg, (int)bounds[0] - 1 - x_offset, (int)bounds[1],
+                       (int)(bounds[2] - 1 - bounds[0]) + 5,
+                       (int)(bounds[3] - 4 - bounds[1]) + 5,
+                       ((int)(bounds[3] - bounds[1]) - 1) / 2 - 1);
+      } else {
+        nvgRoundedRect(args.vg, (int)bounds[0] - 2 - x_offset, (int)bounds[1] - 2,
+                       (int)(bounds[2] - bounds[0]) + 5,
+                       (int)(bounds[3] - bounds[1]) + 5,
+                       ((int)(bounds[3] - bounds[1]) - 1) / 2 - 1);
+      }
       nvgFill(args.vg);
     }
     // draw text:

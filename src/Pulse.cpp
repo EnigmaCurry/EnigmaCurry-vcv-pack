@@ -20,7 +20,6 @@
 #include "components.hpp"
 #include "plugin.hpp"
 #include <string>
-#define TRIGGER_DURATION 1e-3f
 
 struct Pulse : Module {
   enum ParamIds { LEN, NUM_PARAMS };

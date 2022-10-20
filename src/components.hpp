@@ -91,11 +91,12 @@ struct DynamicOverlay : rack::TransparentWidget {
   }
   void addText(std::string text, int size, rack::Vec px, NVGcolor color,
                NVGcolor bgColor, int font, float padding) {
-    text_calls.push_back({text, size, px, color, font, bgColor, padding});
+    if (text.length())
+      text_calls.push_back({text, size, px, color, font, bgColor, padding});
   }
   void addText(std::string text, int size, rack::Vec px, NVGcolor color,
                NVGcolor bgColor, int font) {
-    text_calls.push_back({text, size, px, color, font, bgColor, 1.0});
+    addText(text, size, px, color, bgColor, font, 1);
   }
   void addText(std::string text, int size, rack::Vec px, NVGcolor color,
                NVGcolor bgColor) {

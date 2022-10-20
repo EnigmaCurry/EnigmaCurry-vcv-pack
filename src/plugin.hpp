@@ -21,6 +21,9 @@
 
 using namespace rack;
 
+#define TRIGGER_DURATION 1e-3f
+#define LIGHT_DURATION 1e-1f
+
 // Declare the Plugin, defined in plugin.cpp
 extern Plugin *pluginInstance;
 
@@ -28,3 +31,4 @@ extern Plugin *pluginInstance;
 extern Model *modelTransport;
 extern Model *modelLatch;
 extern Model *modelPulse;
+extern Model *modelRange;

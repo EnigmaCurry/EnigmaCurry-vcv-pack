@@ -20,7 +20,6 @@
 #include "components.hpp"
 #include "plugin.hpp"
 #include <string>
-#define TRIGGER_DURATION 1e-3f
 
 struct Transport : Module {
   enum ParamIds { LEN, TAP_LEN, TAP_PLAY, TAP_ARM, TAP_RESET, NUM_PARAMS };
@@ -39,7 +38,6 @@ struct Transport : Module {
   bool toFlipArm = false;
   bool recordLengthIsPlayLength = false;
   float blinkPhase = 0.f;
-  float resetLightTime = 0.f;
   int clockDivider = 4;
   int clockCount = 0;
   bool playIsIdempotent = false;
@@ -47,7 +45,7 @@ struct Transport : Module {
   int onStopActions = ON_STOP_RESET;
   dsp::SchmittTrigger clockTrigger, playTrigger, armTrigger, resetTrigger;
   dsp::BooleanTrigger tapLenTrigger, tapPlayTrigger, tapArmTrigger, tapResetTrigger;
-  dsp::PulseGenerator playPulse, recordPulse, resetPulse, loopPulse;
+  dsp::PulseGenerator playPulse, recordPulse, resetPulse, loopPulse, resetLightPulse;
 
   Transport() {
     config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -70,13 +68,6 @@ struct Transport : Module {
   }
 
   void process(const ProcessArgs &args) override {
-    if (resetLightTime > 0.f) {
-      lights[TAP_RESET_LIGHT].setBrightness(1.f);
-      resetLightTime -= args.sampleTime;
-    } else {
-      lights[TAP_RESET_LIGHT].setBrightness(0.f);
-    }
-
     recordLength = int(params[LEN].getValue());
     if (tapLenTrigger.process(params[TAP_LEN].getValue())) {
       bypassRecordLength = !bypassRecordLength;
@@ -169,6 +160,7 @@ struct Transport : Module {
     } else {
       lights[TAP_ARM_LIGHT].setBrightness(armed);
     }
+    lights[TAP_RESET_LIGHT].setBrightness(resetLightPulse.process(args.sampleTime) ? 1.f : 0.f);
 
     outputs[PTRG].setVoltage(playPulse.process(args.sampleTime) ? 10.f : 0.f);
     outputs[RTRG].setVoltage(recordPulse.process(args.sampleTime) ? 10.f : 0.f);
@@ -177,8 +169,8 @@ struct Transport : Module {
   }
 
   void triggerResetPulse() {
-    resetLightTime = 0.1f;
     resetPulse.trigger(TRIGGER_DURATION);
+    resetLightPulse.trigger(LIGHT_DURATION);
   }
 
   void triggerLoopPulse() {

@@ -5,6 +5,7 @@
    intended default use, the reset signal means to stop. So it made
    no sense to send stop on start.
  * Adds Pulse module.
+ * Adds Range module.
 
 2.0.7
 

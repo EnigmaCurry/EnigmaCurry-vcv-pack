@@ -6,6 +6,7 @@ This is my collection of modules for [VCV Rack](https://vcvrack.com/):
  * [Transport](#Transport)
  * [Latch](#Latch)
  * [Pulse](#Pulse)
+ * [Range](#Range)
 
 [These modules are freely available in the VCV Rack
 Library.](https://library.vcvrack.com/?brand=EnigmaCurry)
@@ -304,4 +305,31 @@ time and show it as exactly 8 seconds.
 
 You can download this as a [VCV Rack selection
 `.vcvs`](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/raw/v2/patches/Selections/Pulse.vcvs)
+
+### Range
+
+Range is a polyphonic latched voltage selector. Input triggers to
+latch the selected voltage, held until the next trigger happens, or
+until reset.
+
+![Range](screenshots/Range.png)
+
+Range has two selectable voltage ranges, toggleable via the `RANGE`
+button:
+
+ * 0V -> 10V : Use any of the 11 input trigger jacks labeled 0V to
+   10V.
+ * 1V/octave (0V -> 1V): Use any of the 12 input trigger jacks labeled
+   C to B.
+
+A single trigger on `RESET` will reset all the outputs.
+
+In the following demonstration, Range is used to select four pitches
+from a chord. It is done in two different ways on the two rows, to
+demonstrate both 10v and 1v/octave ranges:
+
+![Range Demonstration](screenshots/RangeDemonstration.png)
+
+You can download this as a [VCV Rack selection
+`.vcvs`](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/raw/v2/patches/Selections/Range.vcvs)
 

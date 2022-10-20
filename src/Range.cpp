@@ -254,7 +254,7 @@ struct RangeWidget : ModuleWidget {
     {
       FramebufferWidget *buffer = new FramebufferWidget();
       DynamicOverlay *overlay = new DynamicOverlay(HP);
-      overlay->addText("Range", 30, Vec(mm2px(HP * HP_UNIT / 2), 20), WHITE,
+      overlay->addText("Range", 30, Vec(mm2px(HP * HP_UNIT / 2), 25), WHITE,
                        CLEAR, MANROPE);
       overlay->addText("RANGE", 13, tapRangeLoc.minus(Vec(0, 20)), WHITE,
                        RED_TRANSPARENT, FANTASQUE, 1);

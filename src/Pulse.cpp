@@ -24,11 +24,11 @@
 struct Pulse : Module {
   enum ParamIds { LEN, NUM_PARAMS };
   enum InputIds { TRIG, RESET, CLOCK, NUM_INPUTS };
-  enum OutputIds { GATE, END, NUM_OUTPUTS };
+  enum OutputIds { GATE, END, RISE, FALL, NUM_OUTPUTS };
   enum LightIds { NUM_LIGHTS };
   enum OnRetriggerActionIds { ON_RETRIGGER_NEW_TRIGGER, ON_RETRIGGER_NO_NEW_TRIGGER, ON_RETRIGGER_RESET};
   dsp::SchmittTrigger clockTrigger, trigTrigger[16], resetTrigger;
-  dsp::PulseGenerator endPulse[16];
+  dsp::PulseGenerator endPulse[16], risePulse[16], fallPulse[16];
   int pulseLength = 1;
   int pulseCountMod = 0;
   int clockDivider = 1;
@@ -72,6 +72,7 @@ struct Pulse : Module {
           if (gateProgress[i] == pulseLength - 1) {
             // Pulse finished:
             gateProgress[i] = -1;
+            fallPulse[i].trigger(TRIGGER_DURATION);
           } else if (gateProgress[i] >= 0) {
             // Pulse ongoing:
             gateProgress[i] += 1;
@@ -86,8 +87,10 @@ struct Pulse : Module {
             if (gateProgress[i] == -1 || \
                 onRetriggerAction == ON_RETRIGGER_NEW_TRIGGER) {
               gateProgress[i] = 0;
+              risePulse[i].trigger(TRIGGER_DURATION);
             } else if (onRetriggerAction == ON_RETRIGGER_RESET) {
               gateProgress[i] = -1;
+              fallPulse[i].trigger(TRIGGER_DURATION);
             }
             trigQueue[i] = -1;
           }
@@ -119,6 +122,10 @@ struct Pulse : Module {
       outputs[GATE].setVoltage((unclockedTrigs[i] || gateProgress[i] >= 0) ? 10.f : 0.f, i);
       // END trigger:
       outputs[END].setVoltage(endPulse[i].process(args.sampleTime) ? 10.f : 0.f, i);
+      // RISE trigger:
+      outputs[RISE].setVoltage(risePulse[i].process(args.sampleTime) ? 10.f : 0.f, i);
+      // FALL trigger:
+      outputs[FALL].setVoltage(fallPulse[i].process(args.sampleTime) ? 10.f : 0.f, i);
     }
   }
 
@@ -242,15 +249,17 @@ struct PulseDisplay : public DynamicOverlay {
 
 struct PulseWidget : ModuleWidget {
   Vec displayLoc = pulseGrid.loc(20,0).plus(Vec(0,6));
-  Vec lenLoc = pulseGrid.loc(76,0);
-  int o = 105;
-  int h = 28;
+  Vec lenLoc = pulseGrid.loc(73,0);
+  int o = 100;
+  int h = 24;
   Vec clockLoc = pulseGrid.loc(o, 0);
   Vec trigLoc = pulseGrid.loc(o+h, 0);
 
   Vec resetLoc = pulseGrid.loc(o+h*2, 0);
   Vec gateLoc = pulseGrid.loc(o+h*3,0);
   Vec endLoc = pulseGrid.loc(o+h*4,0);
+  Vec edge1Loc = pulseGrid.loc(o+h*5,0);
+  Vec edge2Loc = pulseGrid.loc(o+h*5,0).plus(Vec(0,24));
   // Vec pulseDisplayTopLeft = pulseGrid.loc(, 0).minus(Vec(7,10));
   // Vec pulseDisplayBottomRight = pulseGrid.loc(3, 1).plus(Vec(3,10));
 
@@ -261,6 +270,8 @@ struct PulseWidget : ModuleWidget {
     addInput(createInputCentered<PJ301MPort>(clockLoc, module, Pulse::CLOCK));
     addOutput(createOutputCentered<PJ301MPort>(gateLoc, module, Pulse::GATE));
     addOutput(createOutputCentered<PJ301MPort>(endLoc, module, Pulse::END));
+    addOutput(createOutputCentered<PJ301MPort>(edge1Loc, module, Pulse::RISE));
+    addOutput(createOutputCentered<PJ301MPort>(edge2Loc, module, Pulse::FALL));
     setPanel(
              APP->window->loadSvg(asset::plugin(pluginInstance, "res/3hp.svg")));
     addParam(
@@ -274,15 +285,17 @@ struct PulseWidget : ModuleWidget {
                        CLEAR, MANROPE);
       overlay->addText("LENGTH", 9, lenLoc.minus(Vec(0, 20)), WHITE,
                        RED_TRANSPARENT, FANTASQUE, 0);
-      overlay->addText("CLOCK", 9, clockLoc.minus(Vec(0, 15)), WHITE,
+      overlay->addText("CLOCK", 9, clockLoc.minus(Vec(0, 13)), WHITE,
                        RED_TRANSPARENT, FANTASQUE, 0);
-      overlay->addText("TRIG", 9, trigLoc.minus(Vec(0, 15)), WHITE,
+      overlay->addText("TRIG", 9, trigLoc.minus(Vec(0, 13)), WHITE,
                        RED_TRANSPARENT, FANTASQUE, 0);
-      overlay->addText("RESET", 9, resetLoc.minus(Vec(0, 15)), WHITE,
+      overlay->addText("RESET", 9, resetLoc.minus(Vec(0, 13)), WHITE,
                        RED_TRANSPARENT, FANTASQUE, 0);
-      overlay->addText("GATE", 9, gateLoc.minus(Vec(0, 15)), WHITE,
+      overlay->addText("GATE", 9, gateLoc.minus(Vec(0, 13)), WHITE,
                        BLACK_TRANSPARENT, FANTASQUE, 0);
-      overlay->addText("END", 9, endLoc.minus(Vec(0, 15)), WHITE,
+      overlay->addText("END", 9, endLoc.minus(Vec(0, 13)), WHITE,
+                       BLACK_TRANSPARENT, FANTASQUE, 0);
+      overlay->addText("RISE/FALL", 9, edge1Loc.minus(Vec(0, 13)), WHITE,
                        BLACK_TRANSPARENT, FANTASQUE, 0);
       buffer->addChild(overlay);
       addChild(buffer);

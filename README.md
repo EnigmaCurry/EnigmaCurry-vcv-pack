@@ -233,14 +233,16 @@ with a single shared clocked length. Using 16 channel polyphony, Pulse
 has 16 `TRIG` inputs, 16 `GATE` outputs, and 16 `END` outputs. The
 triggers are quantized to the incoming clock with configurable
 resolution. The `GATE` outputs are held high for the duration of each
-independent pulse. The `END` outputs are triggered on the clock cycle
-immediately preceding the end of each gate. A single `LENGTH`
-parameter controls the length (1 -> 128) of each gate. All of the
-gates must share the same length, however they are triggered and held
-independently of each other. Use the external `CLOCK` signal, and the
-built-in clock divider, and pulse will count the exact amount of time
-to keep each gate open at different times. A shared `RESET` input will
-immediately reset all of the gates and the clock.
+independent pulse. The rising and falling edge of the gates are
+triggered on discrete `RISE/FALL` jacks. `END` outputs are triggered
+on the clock cycle immediately preceding the end of each gate. A
+single `LENGTH` parameter controls the length (1 -> 128) of each gate.
+All of the gates must share the same length, however they are
+triggered and held independently of each other. Use the external
+`CLOCK` signal, and the built-in clock divider, and pulse will count
+the exact amount of time to keep each gate open at different times. A
+shared `RESET` input will immediately reset all of the gates and the
+clock.
 
 ![Pulse](screenshots/Pulse.png)
 

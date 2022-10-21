@@ -306,6 +306,11 @@ time and show it as exactly 8 seconds.
 You can download this as a [VCV Rack selection
 `.vcvs`](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/raw/v2/patches/Selections/Pulse.vcvs)
 
+![Pulse Polyphonic Demonstration 2](screenshots/PulsePolyphonicDemonstration.2.png)
+
+You can download this as a [VCV Rack selection
+`.vcvs`](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/raw/v2/patches/Selections/Pulse.2.vcvs)
+
 ### Range
 
 Range is a polyphonic latched voltage selector. Input triggers to

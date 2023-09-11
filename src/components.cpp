@@ -29,3 +29,32 @@ NVGcolor PURPLE = nvgRGBA(0xff, 0x00, 0xff, 0xff);
 NVGcolor BLUE = nvgRGBA(0x00, 0x00, 0xff, 0xff);
 NVGcolor YELLOW = nvgRGBA(0xff, 0xff, 0x00, 0xff);
 NVGcolor PINK = nvgRGBA(0xff, 0xc0, 0xcb, 0xff);
+
+std::string padTripleDigits(int num, int wide) {
+  if (num >= pow(10,wide)) {
+    if (wide < 2) {
+      return "X";
+    } else if (wide == 2) {
+      return "XX";
+    } else {
+      return "XXX";
+    }
+  }
+  else if (num <= 0) {
+    if (wide < 2) {
+      return "_";
+    } else if (wide == 2) {
+      return "__";
+    } else {
+      return "___";
+    }
+  }
+  std::string s = std::to_string(num);
+  if (int(s.length()) < wide) {
+    s.insert(s.begin(), wide - s.length(), '_');
+  }
+  return s;
+}
+std::string padTripleDigits(int num) {
+  return padTripleDigits(num, 3);
+}

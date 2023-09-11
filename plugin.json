@@ -48,6 +48,15 @@
             "tags": [
                 "Utility", "Attenuator"
             ]
+        },
+        {
+            "slug": "NegativeHarmony",
+            "name": "NegativeHarmony",
+            "description": "Invert notes (1v/oct) over a tonic note axis",
+            "manualUrl": "https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/blob/v2/README.md#negative_harmony",
+            "tags": [
+                "Quantizer", "Polyphonic"
+            ]
         }
     ]
 }

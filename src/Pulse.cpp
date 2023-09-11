@@ -168,42 +168,12 @@ struct Pulse : Module {
 #define COLUMNS 1
 panel_grid<HP, ROWS, COLUMNS> pulseGrid;
 
-std::string pulsePad(int num, int wide) {
-  if (num >= pow(10,wide)) {
-    if (wide < 2) {
-      return "X";
-    } else if (wide == 2) {
-      return "XX";
-    } else {
-      return "XXX";
-    }
-  }
-  else if (num <= 0) {
-    if (wide < 2) {
-      return "_";
-    } else if (wide == 2) {
-      return "__";
-    } else {
-      return "___";
-    }
-  }
-  std::string s = std::to_string(num);
-  if (int(s.length()) < wide) {
-    s.insert(s.begin(), wide - s.length(), '_');
-  }
-  return s;
-}
-std::string pulsePad(int num) {
-  return pulsePad(num, 3);
-}
-
-
 struct PulseDisplay : public DynamicOverlay {
   using DynamicOverlay::DynamicOverlay;
   Pulse *module;
 
   std::string pad(int num) {
-    return pulsePad(num);
+    return padTripleDigits(num);
   }
 
   PulseDisplay(int hp_width) : DynamicOverlay(hp_width) {}
@@ -215,32 +185,32 @@ struct PulseDisplay : public DynamicOverlay {
     Vec clockCountTextLoc = displayLoc.plus(Vec(0, 40));
     if (module) {
       DynamicOverlay::clear();
-      addText(pulsePad(module->pulseLength), 12, lengthTextLoc,
+      addText(padTripleDigits(module->pulseLength), 12, lengthTextLoc,
               RED, CLEAR, DSEG);
       int channelsActive = 0;
       std::string pulseCountText = "";
       for (int i=0; i < 16; i++) {
         if(module->gateProgress[i] >= 0) {
           channelsActive += 1;
-          pulseCountText = pulseCountText == "" ? pulsePad(module->gateProgress[i] + 1) : pulseCountText;
+          pulseCountText = pulseCountText == "" ? padTripleDigits(module->gateProgress[i] + 1) : pulseCountText;
         }
       }
       addText(pulseCountText, 12, pulseCountTextLoc,
               channelsActive > 1 ? PINK : YELLOW, CLEAR, DSEG);
       if (module->clockCountMod >= 0 && module->clockDivider > 1) {
         int wide = module->clockDivider > 99 ? 3 : (module->clockDivider > 9 ? 2 : 1);
-        addText(string::f("%s/%d", pulsePad(module->clockCountMod + 1, wide).c_str(), module->clockDivider),
+        addText(string::f("%s/%d", padTripleDigits(module->clockCountMod + 1, wide).c_str(), module->clockDivider),
                 wide == 3 ? 6 : (wide == 2 ? 8 : 12), clockCountTextLoc, WHITE, CLEAR, DSEG);
       }
       DynamicOverlay::draw(args);
     } else {
       // Draw example display for module browser:
       DynamicOverlay::clear();
-      addText(pulsePad(4), 12, lengthTextLoc,
+      addText(padTripleDigits(4), 12, lengthTextLoc,
               RED, CLEAR, DSEG);
-      addText(pulsePad(3), 12, pulseCountTextLoc,
+      addText(padTripleDigits(3), 12, pulseCountTextLoc,
               YELLOW, CLEAR, DSEG);
-      addText(string::f("%s/%d", pulsePad(12, 2).c_str(), 24),
+      addText(string::f("%s/%d", padTripleDigits(12, 2).c_str(), 24),
                 8, clockCountTextLoc, WHITE, CLEAR, DSEG);
       DynamicOverlay::draw(args);
     }

@@ -32,3 +32,4 @@ extern Model *modelTransport;
 extern Model *modelLatch;
 extern Model *modelPulse;
 extern Model *modelRange;
+extern Model *modelNegativeHarmony;

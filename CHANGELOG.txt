@@ -1,3 +1,8 @@
+2.1.0
+
+ * Added modules to Cardinal :: https://github.com/DISTRHO/Cardinal/pull/573
+ * Adds Negative Harmony module.
+
 2.0.8
 
  * Transport: renders example display for module browser

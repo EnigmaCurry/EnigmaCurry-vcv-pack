@@ -53,12 +53,14 @@ struct NegativeHarmony : Module {
     for (int c = 0; c < channels; c++) {
       int distance = axis.midi_note - chromaticNoteFromVoltage(inputs[NOTE_IN].getPolyVoltage(c)).midi_note;
       chromaticNote mirroredNote = chromaticNoteFromMidiNote(axis.midi_note + distance);
-      outputs[NOTE_OUT].setVoltage(calculateChromaticNoteVoltage(mirroredNote));
+      outputs[NOTE_OUT].setVoltage(calculateChromaticNoteVoltage(mirroredNote),c);
       // passthrough gate and velocity:
-      outputs[GATE_OUT].setVoltage(inputs[GATE_IN].getNormalVoltage(0.));
-      outputs[VELOCITY_OUT].setVoltage(inputs[VELOCITY_IN].getNormalVoltage(0.));
+      outputs[GATE_OUT].setVoltage(inputs[GATE_IN].getNormalVoltage(0.,c),c);
+      outputs[VELOCITY_OUT].setVoltage(inputs[VELOCITY_IN].getNormalVoltage(0.,c),c);
     }
     outputs[NOTE_OUT].setChannels(channels);
+    outputs[GATE_OUT].setChannels(channels);
+    outputs[VELOCITY_OUT].setChannels(channels);
   }
 };
 
@@ -130,13 +132,13 @@ struct NegativeHarmonyWidget : ModuleWidget {
                        RED_TRANSPARENT);
       overlay->addText("AXIS", 13, axisKnobLoc.minus(Vec(0, 20)), WHITE,
                        RED_TRANSPARENT);
-      overlay->addText("NOTE", 13, noteInLoc.minus(Vec(0, 20)), WHITE,
+      overlay->addText("V/OCT", 13, noteInLoc.minus(Vec(0, 20)), WHITE,
                        RED_TRANSPARENT);
       overlay->addText("GATE", 13, gateInLoc.minus(Vec(0, 20)), WHITE,
                        RED_TRANSPARENT);
       overlay->addText("VEL", 13, velocityInLoc.minus(Vec(0, 20)), WHITE,
                        RED_TRANSPARENT);
-      overlay->addText("NOTE", 13, noteOutLoc.minus(Vec(0, 20)), WHITE,
+      overlay->addText("V/OCT", 13, noteOutLoc.minus(Vec(0, 20)), WHITE,
                        BLACK_TRANSPARENT);
       overlay->addText("GATE", 13, gateOutLoc.minus(Vec(0, 20)), WHITE,
                        BLACK_TRANSPARENT);

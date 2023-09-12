@@ -8,6 +8,10 @@ float calculateChromaticVoltageSemitoneOffset(float volts) {
   return volts / CHROMATIC_SEMITONE_VOLTAGE;
 }
 
+float calculateChromaticNoteVoltage(chromaticNote note) {
+  return (note.midi_note - middleC().midi_note) * CHROMATIC_SEMITONE_VOLTAGE;
+}
+
 chromaticNote chromaticNoteFromMidiNote(int midi_note) {
   chromaticNote note {
     (ChromaticName)(midi_note % TOTAL_CHROMATIC_NOTES),

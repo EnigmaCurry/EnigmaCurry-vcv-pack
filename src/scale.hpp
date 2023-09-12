@@ -16,6 +16,7 @@ struct chromaticNote {
 
 chromaticNote middleC();
 
+float calculateChromaticNoteVoltage(chromaticNote note);
 float calculateChromaticVoltageSemitoneOffset(float volts);
 
 chromaticNote chromaticNoteFromMidiNote(int midi_note);

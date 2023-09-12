@@ -23,16 +23,16 @@
 #include "scale.hpp"
 
 struct NegativeHarmony : Module {
-  enum ParamIds { TONIC, NUM_PARAMS };
-  enum InputIds { TONIC_IN, NOTE_IN, GATE_IN, VELOCITY_IN, NUM_INPUTS };
+  enum ParamIds { AXIS, NUM_PARAMS };
+  enum InputIds { AXIS_IN, NOTE_IN, GATE_IN, VELOCITY_IN, NUM_INPUTS };
   enum OutputIds { NOTE_OUT, GATE_OUT, VELOCITY_OUT, NUM_OUTPUTS };
   enum LightIds { NUM_LIGHTS };
-  chromaticNote tonic = middleC();
-  
+  chromaticNote axis = middleC();
+
   NegativeHarmony() {
     config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-    configParam(TONIC, -5, 5, 0, "Tonic Axis");
-    configInput(TONIC_IN, "Tonic CV");
+    configParam(AXIS, -5, 5, 0, "Axis");
+    configInput(AXIS_IN, "Axis CV");
     configInput(NOTE_IN, "NOTE_IN");
     configOutput(NOTE_OUT, "NOTE_OUT");
     configInput(GATE_IN, "GATE_IN");
@@ -42,13 +42,23 @@ struct NegativeHarmony : Module {
   }
 
   void process(const ProcessArgs &args) override {
-    float tonic_volts = 0.0;
-    if (inputs[TONIC_IN].isConnected()) {
-      tonic_volts = std::min(5.0f, std::max(-5.0f, inputs[TONIC_IN].getNormalVoltage(0.0)));
+    float axis_volts = 0.0;
+    int channels = inputs[NOTE_IN].getChannels();
+    if (inputs[AXIS_IN].isConnected()) {
+      axis_volts = std::min(5.0f, std::max(-5.0f, inputs[AXIS_IN].getNormalVoltage(0.)));
     } else {
-      tonic_volts = params[TONIC].getValue();
+      axis_volts = params[AXIS].getValue();
     }
-    tonic = chromaticNoteFromVoltage(tonic_volts);
+    axis = chromaticNoteFromVoltage(axis_volts);
+    for (int c = 0; c < channels; c++) {
+      int distance = axis.midi_note - chromaticNoteFromVoltage(inputs[NOTE_IN].getPolyVoltage(c)).midi_note;
+      chromaticNote mirroredNote = chromaticNoteFromMidiNote(axis.midi_note + distance);
+      outputs[NOTE_OUT].setVoltage(calculateChromaticNoteVoltage(mirroredNote));
+      // passthrough gate and velocity:
+      outputs[GATE_OUT].setVoltage(inputs[GATE_IN].getNormalVoltage(0.));
+      outputs[VELOCITY_OUT].setVoltage(inputs[VELOCITY_IN].getNormalVoltage(0.));
+    }
+    outputs[NOTE_OUT].setChannels(channels);
   }
 };
 
@@ -56,8 +66,7 @@ struct NegativeHarmony : Module {
 #define ROWS 14
 #define COLUMNS 11
 panel_grid<HP, ROWS, COLUMNS> negativeHarmonyGrid;
-Vec displayLoc = negativeHarmonyGrid.loc(1,7).minus(Vec(0,4));
-
+Vec displayLoc = negativeHarmonyGrid.loc(1,3).minus(Vec(0,4));
 struct NegativeHarmonyDisplay : public DynamicOverlay {
   using DynamicOverlay::DynamicOverlay;
   NegativeHarmony *module;
@@ -65,16 +74,16 @@ struct NegativeHarmonyDisplay : public DynamicOverlay {
   NegativeHarmonyDisplay(int hp_width) : DynamicOverlay(hp_width) {}
 
   void draw(const DrawArgs &args) override {
-    Vec tonicTextLoc = displayLoc.plus(Vec(0,24));
+    Vec axisTextLoc = displayLoc.plus(Vec(15,24));
     if (module) {
       DynamicOverlay::clear();
-      addText(chromaticNoteToString(module->tonic), 10, tonicTextLoc,
+      addText(chromaticNoteToString(module->axis), 15, axisTextLoc,
               RED, CLEAR, DSEG);
       DynamicOverlay::draw(args);
     } else {
       // Draw example display for module browser:
       DynamicOverlay::clear();
-      addText("C4", 12, tonicTextLoc,
+      addText("C4", 12, axisTextLoc,
               RED, CLEAR, DSEG);
       DynamicOverlay::draw(args);
     }
@@ -88,8 +97,8 @@ struct NegativeHarmonyWidget : ModuleWidget {
     setPanel(
              APP->window->loadSvg(asset::plugin(pluginInstance, "res/6hp.svg")));
 
-    Vec tonicInLoc = negativeHarmonyGrid.loc(4,2);
-    Vec tonicKnobLoc = negativeHarmonyGrid.loc(4,7);
+    Vec axisInLoc = negativeHarmonyGrid.loc(4,2);
+    Vec axisKnobLoc = negativeHarmonyGrid.loc(4,7);
     Vec noteInLoc = negativeHarmonyGrid.loc(6, 2);
     Vec noteOutLoc = negativeHarmonyGrid.loc(6, 7);
 
@@ -99,7 +108,7 @@ struct NegativeHarmonyWidget : ModuleWidget {
     Vec velocityInLoc = negativeHarmonyGrid.loc(10, 2);
     Vec velocityOutLoc = negativeHarmonyGrid.loc(10, 7);
 
-    addInput(createInputCentered<PJ301MPort>(tonicInLoc, module, NegativeHarmony::TONIC_IN));
+    addInput(createInputCentered<PJ301MPort>(axisInLoc, module, NegativeHarmony::AXIS_IN));
     addInput(createInputCentered<PJ301MPort>(noteInLoc, module, NegativeHarmony::NOTE_IN));
     addInput(createInputCentered<PJ301MPort>(gateInLoc, module, NegativeHarmony::GATE_IN));
     addInput(createInputCentered<PJ301MPort>(velocityInLoc, module, NegativeHarmony::VELOCITY_IN));
@@ -107,7 +116,7 @@ struct NegativeHarmonyWidget : ModuleWidget {
     addOutput(createOutputCentered<PJ301MPort>(gateOutLoc, module, NegativeHarmony::GATE_OUT));
     addOutput(createOutputCentered<PJ301MPort>(velocityOutLoc, module, NegativeHarmony::VELOCITY_OUT));
     addParam(
-             createParamCentered<RoundBlackKnob>(tonicKnobLoc, module, NegativeHarmony::TONIC));
+             createParamCentered<RoundBlackKnob>(axisKnobLoc, module, NegativeHarmony::AXIS));
 
     // Draw static text labels to frame buffer
     {
@@ -117,9 +126,9 @@ struct NegativeHarmonyWidget : ModuleWidget {
                        CLEAR, MANROPE);
       overlay->addText("Harmony", 18, Vec(mm2px(HP * HP_UNIT / 2), 25), WHITE,
                        CLEAR, MANROPE);
-      overlay->addText("AXIS", 13, tonicInLoc.minus(Vec(0, 20)), WHITE,
+      overlay->addText("AXIS", 13, axisInLoc.minus(Vec(0, 20)), WHITE,
                        RED_TRANSPARENT);
-      overlay->addText("AXIS", 13, tonicKnobLoc.minus(Vec(0, 20)), WHITE,
+      overlay->addText("AXIS", 13, axisKnobLoc.minus(Vec(0, 20)), WHITE,
                        RED_TRANSPARENT);
       overlay->addText("NOTE", 13, noteInLoc.minus(Vec(0, 20)), WHITE,
                        RED_TRANSPARENT);
@@ -137,10 +146,10 @@ struct NegativeHarmonyWidget : ModuleWidget {
       buffer->addChild(overlay);
       addChild(buffer);
       overlay->addBox(displayLoc.minus(Vec(18,8)),
-                      Vec(36,52),
+                      Vec(70,52),
                       BLACK_TRANSPARENT, 5);
     }
-    // Draw dynamic tonic display
+    // Draw dynamic axis display
     {
       NegativeHarmonyDisplay *overlay = new NegativeHarmonyDisplay(HP);
       overlay->module = module;

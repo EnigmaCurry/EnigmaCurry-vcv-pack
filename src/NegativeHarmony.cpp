@@ -100,15 +100,15 @@ struct NegativeHarmonyWidget : ModuleWidget {
              APP->window->loadSvg(asset::plugin(pluginInstance, "res/6hp.svg")));
 
     Vec axisInLoc = negativeHarmonyGrid.loc(4,2);
-    Vec axisKnobLoc = negativeHarmonyGrid.loc(4,7);
+    Vec axisKnobLoc = negativeHarmonyGrid.loc(4,8);
     Vec noteInLoc = negativeHarmonyGrid.loc(6, 2);
-    Vec noteOutLoc = negativeHarmonyGrid.loc(6, 7);
+    Vec noteOutLoc = negativeHarmonyGrid.loc(6, 8);
 
     Vec gateInLoc = negativeHarmonyGrid.loc(8, 2);
-    Vec gateOutLoc = negativeHarmonyGrid.loc(8, 7);
+    Vec gateOutLoc = negativeHarmonyGrid.loc(8, 8);
 
     Vec velocityInLoc = negativeHarmonyGrid.loc(10, 2);
-    Vec velocityOutLoc = negativeHarmonyGrid.loc(10, 7);
+    Vec velocityOutLoc = negativeHarmonyGrid.loc(10, 8);
 
     addInput(createInputCentered<PJ301MPort>(axisInLoc, module, NegativeHarmony::AXIS_IN));
     addInput(createInputCentered<PJ301MPort>(noteInLoc, module, NegativeHarmony::NOTE_IN));

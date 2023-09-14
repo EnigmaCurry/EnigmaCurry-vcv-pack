@@ -1,7 +1,5 @@
 #include <string>
 #include <math.h>
-#include <format>
-#include <iostream>
 
 enum ChromaticName { C, C_SHARP, D, D_SHARP, E, F, F_SHARP, G, G_SHARP, A, A_SHARP, B, LAST_CHROMATIC_NOTE=B};
 const int TOTAL_CHROMATIC_NOTES = ((int)LAST_CHROMATIC_NOTE) + 1;

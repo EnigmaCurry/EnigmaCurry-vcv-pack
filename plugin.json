@@ -1,7 +1,7 @@
 {
     "slug": "EnigmaCurry",
     "name": "EnigmaCurry",
-    "version": "2.0.8",
+    "version": "2.1.0",
     "license": "GPL-3.0-or-later",
     "brand": "EnigmaCurry",
     "author": "EnigmaCurry",
@@ -47,6 +47,15 @@
             "manualUrl": "https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/blob/v2/README.md#range",
             "tags": [
                 "Utility", "Attenuator"
+            ]
+        },
+        {
+            "slug": "NegativeHarmony",
+            "name": "NegativeHarmony",
+            "description": "Invert notes (1v/oct) over a tonic note axis",
+            "manualUrl": "https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/blob/v2/README.md#negative_harmony",
+            "tags": [
+                "Quantizer", "Polyphonic"
             ]
         }
     ]

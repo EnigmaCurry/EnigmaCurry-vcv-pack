@@ -255,26 +255,14 @@ struct TransportDisplay : public DynamicOverlay {
 
   TransportDisplay(int hp_width) : DynamicOverlay(hp_width) {}
 
-  std::string pad(int num) {
-    if (num > 999)
-      return "XXX";
-    else if (num == 0)
-      return "___";
-    std::string s = std::to_string(num);
-    if (s.length() < 3) {
-      s.insert(s.begin(), 3 - s.length(), '_');
-    }
-    return s;
-  }
-
   void draw(const DrawArgs &args) override {
     Vec topTextLoc = transportGrid.loc(4, 7).minus(Vec(8, -15));
     Vec bottomTextLoc = transportGrid.loc(8, 7).minus(Vec(8, -15));
     if (module) {
       DynamicOverlay::clear();
-      std::string recordLength = pad(module->recordLength);
-      std::string playCount = pad(module->playCount);
-      std::string recCount = pad(module->recCount);
+      std::string recordLength = padTripleDigits(module->recordLength);
+      std::string playCount = padTripleDigits(module->playCount);
+      std::string recCount = padTripleDigits(module->recCount);
 
       addText(recordLength, 25, topTextLoc,
               (!module->bypassRecordLength && module->recordLength > 0) ? RED
@@ -290,9 +278,9 @@ struct TransportDisplay : public DynamicOverlay {
       DynamicOverlay::draw(args);
     } else {
       // Draw example when module is inacative (for module browser):
-      addText(pad(4), 25, topTextLoc,
+      addText(padTripleDigits(4), 25, topTextLoc,
               WHITE, CLEAR, DSEG);
-      addText(pad(13), 25, bottomTextLoc, WHITE, CLEAR,
+      addText(padTripleDigits(13), 25, bottomTextLoc, WHITE, CLEAR,
               DSEG);
       DynamicOverlay::draw(args);
     }

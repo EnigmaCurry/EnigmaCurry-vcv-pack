@@ -171,3 +171,6 @@ struct DynamicOverlay : rack::TransparentWidget {
     box_calls.clear();
   }
 };
+
+std::string padTripleDigits(int num, int wide);
+std::string padTripleDigits(int num);

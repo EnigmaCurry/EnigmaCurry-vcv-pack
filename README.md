@@ -7,6 +7,7 @@ This is my collection of modules for [VCV Rack](https://vcvrack.com/):
  * [Latch](#Latch)
  * [Pulse](#Pulse)
  * [Range](#Range)
+ * [Negative Harmony](#Negative-Harmony)
 
 [These modules are freely available in the VCV Rack
 Library.](https://library.vcvrack.com/?brand=EnigmaCurry)
@@ -338,3 +339,25 @@ demonstrate both 10v and 1v/octave ranges:
 You can download this as a [VCV Rack selection
 `.vcvs`](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/raw/v2/patches/Selections/Range.vcvs)
 
+### Negative Harmony
+
+![NegativeHarmony](screenshots/NegativeHarmony.png)
+
+Negative Harmony inverts music notes around a chosen axis. Select a
+central note at which point to flip the notes below it with those
+above it, and vice versa. This technique has been popularized by
+[Jacob Collier](https://www.youtube.com/watch?v=b78NoobJNEo) and he
+does a good job of explaining its character in a series of June Lee's
+videos..
+
+![Negative Harmony
+Demonstration](screenshots/NegativeHarmonyPatch.png)
+
+You can download this as a [VCV Rack selection
+`.vcvs`](https://raw.githubusercontent.com/EnigmaCurry/EnigmaCurry-vcv-pack/v2/patches/Selections/Negative%20Harmony.vcvs)
+
+The included patch simply routes incoming midi through Negative Harmoy
+and passed back out to the host midi out. With the default setting of
+the Axis at C4 this effectively mirrors your MIDI keyboard, such that
+all the top keys are on the bottom and vice versa. Choose a different
+axis and this mirroring point will be shifted accordingly.

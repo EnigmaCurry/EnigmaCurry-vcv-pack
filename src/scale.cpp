@@ -21,7 +21,7 @@ chromaticNote chromaticNoteFromMidiNote(int midi_note) {
 }
 
 chromaticNote chromaticNoteFromVoltage(float volts) {
-  return chromaticNoteFromMidiNote(MIDI_NOTE_MIDDLE_C + std::round(calculateChromaticVoltageSemitoneOffset(volts)));
+  return chromaticNoteFromMidiNote(MIDI_NOTE_MIDDLE_C + std::ceil(calculateChromaticVoltageSemitoneOffset(volts) - 0.5f));
 }
 
 std::string chromaticNoteName(chromaticNote note) {

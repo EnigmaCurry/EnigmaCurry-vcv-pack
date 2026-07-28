@@ -29,6 +29,7 @@ void init(Plugin *p) {
   p->addModel(modelPulse);
   p->addModel(modelRange);
   p->addModel(modelNegativeHarmony);
+  p->addModel(modelEnigmaCurryMixer8);
 
   // Any other plugin initialization may go here.
   // As an alternative, consider lazy-loading assets and lookup tables when your

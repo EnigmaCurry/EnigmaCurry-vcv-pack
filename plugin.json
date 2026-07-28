@@ -57,6 +57,14 @@
             "tags": [
                 "Quantizer", "Polyphonic"
             ]
+        },
+        {
+            "slug": "Mixer8",
+            "name": "Mixer8",
+            "description": "8 mono inputs to stereo (L/R), gain and pan per channel controlled externally via SharedArrayBuffer",
+            "tags": [
+                "Mixer", "Utility"
+            ]
         }
     ]
 }

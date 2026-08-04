@@ -14,12 +14,10 @@ Library.](https://library.vcvrack.com/?brand=EnigmaCurry)
 
 ## License
 
-This software is fully licensed under the [GNU General Public License
+This software is licensed under the [GNU General Public License
 v3.0+](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/blob/v2/LICENSE),
 in the spirit of freely sharing with the VCV Rack and Cardinal
-community. At your discretion, you may alternatively use this software
-under the terms of the [MIT
-license](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/blob/v2/LICENSE.MIT).
+community.
 
 The panel artwork incorporates the public domain [Camels Caravan
 Silhouette](https://openclipart.org/detail/242201/camels-caravan-silhouette)

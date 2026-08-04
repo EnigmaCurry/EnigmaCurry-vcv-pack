@@ -441,7 +441,7 @@ struct EnigmaCurryWebBridgeWidget : ModuleWidget {
 
     EnigmaCurryWebBridgeWidget(EnigmaCurryWebBridge* module) {
         setModule(module);
-        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/6hp.svg")));
+        setPanel(new BrushedMetalPanel(WB_HP));
 
         // All ports in col 1 (right edge). Outputs in the top group,
         // inputs in the bottom group, with row 4 as a visual gap.

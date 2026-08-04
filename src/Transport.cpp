@@ -288,8 +288,7 @@ struct TransportDisplay : public DynamicOverlay {
 struct TransportWidget : ModuleWidget {
   TransportWidget(Transport *module) {
     setModule(module);
-    setPanel(
-        APP->window->loadSvg(asset::plugin(pluginInstance, "res/10hp.svg")));
+    setPanel(new BrushedMetalPanel(HP));
 
     Vec lenLoc = transportGrid.loc(4, 1);
     Vec tapLenLoc = transportGrid.loc(4, 3);

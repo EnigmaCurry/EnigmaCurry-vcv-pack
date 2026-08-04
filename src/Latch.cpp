@@ -75,8 +75,7 @@ panel_grid<HP, ROWS, COLUMNS> latchGrid;
 struct LatchWidget : ModuleWidget {
   LatchWidget(Latch *module) {
     setModule(module);
-    setPanel(
-             APP->window->loadSvg(asset::plugin(pluginInstance, "res/3hp.svg")));
+    setPanel(new BrushedMetalPanel(HP));
 
     Vec trig1Loc = latchGrid.loc(2, 0);
     Vec reset1Loc = latchGrid.loc(4, 0);

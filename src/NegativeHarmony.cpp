@@ -94,8 +94,7 @@ struct NegativeHarmonyDisplay : public DynamicOverlay {
 struct NegativeHarmonyWidget : ModuleWidget {
   NegativeHarmonyWidget(NegativeHarmony *module) {
     setModule(module);
-    setPanel(
-             APP->window->loadSvg(asset::plugin(pluginInstance, "res/6hp.svg")));
+    setPanel(new BrushedMetalPanel(HP));
 
     Vec axisInLoc = negativeHarmonyGrid.loc(4,2);
     Vec axisKnobLoc = negativeHarmonyGrid.loc(4,8);

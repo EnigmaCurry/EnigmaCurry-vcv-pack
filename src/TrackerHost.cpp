@@ -13,6 +13,7 @@
  *   https://github.com/pyer/rack-Biset
  */
 
+#include "components.hpp"
 #include "plugin.hpp"
 #include "../../Biset/src/Tracker/Tracker.hpp"
 #include <atomic>
@@ -285,7 +286,7 @@ TRACKER_HOST_EXPORT int tracker_host_state_size(void) {
 struct EnigmaCurryTrackerHostWidget : ModuleWidget {
     EnigmaCurryTrackerHostWidget(EnigmaCurryTrackerHost* module) {
         setModule(module);
-        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/3hp.svg")));
+        setPanel(new BrushedMetalPanel(3));
     }
 };
 

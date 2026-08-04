@@ -181,12 +181,19 @@ static panel_grid<HP, ROWS, COLUMNS> mixer8Grid;
 struct EnigmaCurryMixer8Widget : ModuleWidget {
     EnigmaCurryMixer8Widget(EnigmaCurryMixer8* module) {
         setModule(module);
-        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/10hp.svg")));
+        setPanel(new BrushedMetalPanel(HP));
+
+        // Shift the whole port matrix ~6px right so col-0 labels have
+        // room to the LEFT of their ports without hugging the panel edge.
+        // Col-2 (master L/R) still has ample right-side padding after this.
+        auto at = [](int r, int c) {
+            return mixer8Grid.loc(r, c).plus(Vec(6, 0));
+        };
 
         // Col 0 rows 1..8: 8 channel inputs.
         for (int ch = 0; ch < 8; ++ch) {
             addInput(createInputCentered<PJ301MPort>(
-                mixer8Grid.loc(1 + ch, 0), module,
+                at(1 + ch, 0), module,
                 EnigmaCurryMixer8::IN0 + ch));
         }
 
@@ -194,27 +201,27 @@ struct EnigmaCurryMixer8Widget : ModuleWidget {
         // Lane A (rows 1..4): SEND L, SEND R, RET L, RET R
         // Lane B (rows 5..8): SEND L, SEND R, RET L, RET R
         addOutput(createOutputCentered<PJ301MPort>(
-            mixer8Grid.loc(1, 1), module, EnigmaCurryMixer8::SEND_AL));
+            at(1, 1), module, EnigmaCurryMixer8::SEND_AL));
         addOutput(createOutputCentered<PJ301MPort>(
-            mixer8Grid.loc(2, 1), module, EnigmaCurryMixer8::SEND_AR));
+            at(2, 1), module, EnigmaCurryMixer8::SEND_AR));
         addInput(createInputCentered<PJ301MPort>(
-            mixer8Grid.loc(3, 1), module, EnigmaCurryMixer8::RET_AL));
+            at(3, 1), module, EnigmaCurryMixer8::RET_AL));
         addInput(createInputCentered<PJ301MPort>(
-            mixer8Grid.loc(4, 1), module, EnigmaCurryMixer8::RET_AR));
+            at(4, 1), module, EnigmaCurryMixer8::RET_AR));
         addOutput(createOutputCentered<PJ301MPort>(
-            mixer8Grid.loc(5, 1), module, EnigmaCurryMixer8::SEND_BL));
+            at(5, 1), module, EnigmaCurryMixer8::SEND_BL));
         addOutput(createOutputCentered<PJ301MPort>(
-            mixer8Grid.loc(6, 1), module, EnigmaCurryMixer8::SEND_BR));
+            at(6, 1), module, EnigmaCurryMixer8::SEND_BR));
         addInput(createInputCentered<PJ301MPort>(
-            mixer8Grid.loc(7, 1), module, EnigmaCurryMixer8::RET_BL));
+            at(7, 1), module, EnigmaCurryMixer8::RET_BL));
         addInput(createInputCentered<PJ301MPort>(
-            mixer8Grid.loc(8, 1), module, EnigmaCurryMixer8::RET_BR));
+            at(8, 1), module, EnigmaCurryMixer8::RET_BR));
 
         // Col 2 rows 3,6: stereo master out (matches lane A/B boundaries).
         addOutput(createOutputCentered<PJ301MPort>(
-            mixer8Grid.loc(3, 2), module, EnigmaCurryMixer8::OUT_L));
+            at(3, 2), module, EnigmaCurryMixer8::OUT_L));
         addOutput(createOutputCentered<PJ301MPort>(
-            mixer8Grid.loc(6, 2), module, EnigmaCurryMixer8::OUT_R));
+            at(6, 2), module, EnigmaCurryMixer8::OUT_R));
 
         // Static labels: module name + tiny channel numbers + aux tokens
         // + master L/R marks. Sends use output-black bg, returns use
@@ -222,35 +229,35 @@ struct EnigmaCurryMixer8Widget : ModuleWidget {
         // the letters.
         FramebufferWidget* buffer = new FramebufferWidget();
         DynamicOverlay* overlay = new DynamicOverlay(HP);
-        overlay->addText("Mixer8", 14, Vec(mm2px(HP * HP_UNIT / 2), 12),
+        overlay->addText("Mixer8", 20, Vec(mm2px(HP * HP_UNIT / 2), 25),
                          WHITE, CLEAR, MANROPE);
         for (int ch = 0; ch < 8; ++ch) {
             char label[4];
             std::snprintf(label, sizeof(label), "%d", ch + 1);
             overlay->addText(label, 10,
-                             mixer8Grid.loc(1 + ch, 0).minus(Vec(0, 12)),
+                             at(1 + ch, 0).plus(Vec(-20, 3)),
                              WHITE, RED_TRANSPARENT);
         }
         // Lane A: SL,SR (send=black), RL,RR (return=red)
-        overlay->addText("AL", 9, mixer8Grid.loc(1, 1).minus(Vec(0, 12)),
+        overlay->addText("AL", 9, at(1, 1).plus(Vec(-20, 3)),
                          WHITE, BLACK_TRANSPARENT);
-        overlay->addText("AR", 9, mixer8Grid.loc(2, 1).minus(Vec(0, 12)),
+        overlay->addText("AR", 9, at(2, 1).plus(Vec(-20, 3)),
                          WHITE, BLACK_TRANSPARENT);
-        overlay->addText("AL", 9, mixer8Grid.loc(3, 1).minus(Vec(0, 12)),
+        overlay->addText("AL", 9, at(3, 1).plus(Vec(-20, 3)),
                          WHITE, RED_TRANSPARENT);
-        overlay->addText("AR", 9, mixer8Grid.loc(4, 1).minus(Vec(0, 12)),
+        overlay->addText("AR", 9, at(4, 1).plus(Vec(-20, 3)),
                          WHITE, RED_TRANSPARENT);
-        overlay->addText("BL", 9, mixer8Grid.loc(5, 1).minus(Vec(0, 12)),
+        overlay->addText("BL", 9, at(5, 1).plus(Vec(-20, 3)),
                          WHITE, BLACK_TRANSPARENT);
-        overlay->addText("BR", 9, mixer8Grid.loc(6, 1).minus(Vec(0, 12)),
+        overlay->addText("BR", 9, at(6, 1).plus(Vec(-20, 3)),
                          WHITE, BLACK_TRANSPARENT);
-        overlay->addText("BL", 9, mixer8Grid.loc(7, 1).minus(Vec(0, 12)),
+        overlay->addText("BL", 9, at(7, 1).plus(Vec(-20, 3)),
                          WHITE, RED_TRANSPARENT);
-        overlay->addText("BR", 9, mixer8Grid.loc(8, 1).minus(Vec(0, 12)),
+        overlay->addText("BR", 9, at(8, 1).plus(Vec(-20, 3)),
                          WHITE, RED_TRANSPARENT);
-        overlay->addText("L", 10, mixer8Grid.loc(3, 2).minus(Vec(0, 12)),
+        overlay->addText("L", 10, at(3, 2).plus(Vec(-20, 3)),
                          WHITE, BLACK_TRANSPARENT);
-        overlay->addText("R", 10, mixer8Grid.loc(6, 2).minus(Vec(0, 12)),
+        overlay->addText("R", 10, at(6, 2).plus(Vec(-20, 3)),
                          WHITE, BLACK_TRANSPARENT);
         buffer->addChild(overlay);
         addChild(buffer);

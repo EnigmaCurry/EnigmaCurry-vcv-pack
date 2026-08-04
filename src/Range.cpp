@@ -180,29 +180,29 @@ struct RangeTriggerOverlay : public DynamicOverlay {
   }
   void drawTriggerLabels() {
     Vec numOffset = Vec(-20, 3);
-    addText(triggerLabels[0], fontSize, in1Loc.plus(numOffset), BLACK,
+    addText(triggerLabels[0], fontSize, in1Loc.plus(numOffset), WHITE,
             RED_TRANSPARENT, FANTASQUE, 0);
-    addText(triggerLabels[1], fontSize, in2Loc.plus(numOffset), BLACK,
+    addText(triggerLabels[1], fontSize, in2Loc.plus(numOffset), WHITE,
             RED_TRANSPARENT, FANTASQUE, 0);
-    addText(triggerLabels[2], fontSize, in3Loc.plus(numOffset), BLACK,
+    addText(triggerLabels[2], fontSize, in3Loc.plus(numOffset), WHITE,
             RED_TRANSPARENT, FANTASQUE, 0);
-    addText(triggerLabels[3], fontSize, in4Loc.plus(numOffset), BLACK,
+    addText(triggerLabels[3], fontSize, in4Loc.plus(numOffset), WHITE,
             RED_TRANSPARENT, FANTASQUE, 0);
-    addText(triggerLabels[4], fontSize, in5Loc.plus(numOffset), BLACK,
+    addText(triggerLabels[4], fontSize, in5Loc.plus(numOffset), WHITE,
             RED_TRANSPARENT, FANTASQUE, 0);
-    addText(triggerLabels[5], fontSize, in6Loc.plus(numOffset), BLACK,
+    addText(triggerLabels[5], fontSize, in6Loc.plus(numOffset), WHITE,
             RED_TRANSPARENT, FANTASQUE, 0);
-    addText(triggerLabels[6], fontSize, in7Loc.plus(numOffset), BLACK,
+    addText(triggerLabels[6], fontSize, in7Loc.plus(numOffset), WHITE,
             RED_TRANSPARENT, FANTASQUE, 0);
-    addText(triggerLabels[7], fontSize, in8Loc.plus(numOffset), BLACK,
+    addText(triggerLabels[7], fontSize, in8Loc.plus(numOffset), WHITE,
             RED_TRANSPARENT, FANTASQUE, 0);
-    addText(triggerLabels[8], fontSize, in9Loc.plus(numOffset), BLACK,
+    addText(triggerLabels[8], fontSize, in9Loc.plus(numOffset), WHITE,
             RED_TRANSPARENT, FANTASQUE, 0);
-    addText(triggerLabels[9], fontSize, in10Loc.plus(numOffset).plus((triggerLabels[9].size() > 2 && fontSize > 9) ? Vec(-2,0) : Vec(0,0)), BLACK,
+    addText(triggerLabels[9], fontSize, in10Loc.plus(numOffset).plus((triggerLabels[9].size() > 2 && fontSize > 9) ? Vec(-2,0) : Vec(0,0)), WHITE,
             RED_TRANSPARENT, FANTASQUE, 0);
-    addText(triggerLabels[10], fontSize, in11Loc.plus(numOffset).plus((triggerLabels[10].size() > 2 && fontSize > 9) ? Vec(-3,0) : Vec(0,0)), BLACK,
+    addText(triggerLabels[10], fontSize, in11Loc.plus(numOffset).plus((triggerLabels[10].size() > 2 && fontSize > 9) ? Vec(-3,0) : Vec(0,0)), WHITE,
             RED_TRANSPARENT, FANTASQUE, 0);
-    addText(triggerLabels[11], fontSize, in12Loc.plus(numOffset).plus((triggerLabels[11].size() > 2 && fontSize > 9) ? Vec(-3,0) : Vec(0,0)), BLACK,
+    addText(triggerLabels[11], fontSize, in12Loc.plus(numOffset).plus((triggerLabels[11].size() > 2 && fontSize > 9) ? Vec(-3,0) : Vec(0,0)), WHITE,
             RED_TRANSPARENT, FANTASQUE, 0);
   }
 
@@ -226,8 +226,7 @@ struct RangeWidget : ModuleWidget {
 
   RangeWidget(Range *module) {
     setModule(module);
-    setPanel(
-             APP->window->loadSvg(asset::plugin(pluginInstance, "res/6hp.svg")));
+    setPanel(new BrushedMetalPanel(HP));
 
     addInput(createInputCentered<PJ301MPort>(resetLoc, module, Range::RESET));
     addInput(createInputCentered<PJ301MPort>(in1Loc, module, Range::IN_1));

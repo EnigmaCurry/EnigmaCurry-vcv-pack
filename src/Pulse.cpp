@@ -217,8 +217,8 @@ struct PulseDisplay : public DynamicOverlay {
 
 struct PulseWidget : ModuleWidget {
   Vec displayLoc = pulseGrid.loc(20,0).plus(Vec(0,6));
-  Vec lenLoc = pulseGrid.loc(73,0);
-  int o = 100;
+  Vec lenLoc = pulseGrid.loc(82,0);
+  int o = 108;
   int h = 24;
   Vec clockLoc = pulseGrid.loc(o, 0);
   Vec trigLoc = pulseGrid.loc(o+h, 0);
@@ -240,8 +240,7 @@ struct PulseWidget : ModuleWidget {
     addOutput(createOutputCentered<PJ301MPort>(endLoc, module, Pulse::END));
     addOutput(createOutputCentered<PJ301MPort>(edge1Loc, module, Pulse::RISE));
     addOutput(createOutputCentered<PJ301MPort>(edge2Loc, module, Pulse::FALL));
-    setPanel(
-             APP->window->loadSvg(asset::plugin(pluginInstance, "res/3hp.svg")));
+    setPanel(new BrushedMetalPanel(HP));
     addParam(
              createParamCentered<RoundBlackKnob>(lenLoc, module, Pulse::LEN));
 

@@ -280,3 +280,90 @@ struct BrushedMetalPanel : rack::FramebufferWidget {
     addChild(d);
   }
 };
+
+// Photographic-brushed-aluminium variant. Replaces steps 1 (base gradient) +
+// 3 (procedural grain) of BrushedMetalDraw with a single tiled blit of a
+// pre-baked texture; keeps the sheen / edges / border on top.
+//
+// Not FBO-cached: the draw is now one image fill plus a handful of gradient
+// rects, which is cheaper than the procedural grain's ~1000 stroke calls, so
+// there is nothing to amortise.
+//
+// Texture is lazy-loaded on first draw so args.vg is the correct NanoVG
+// context for the created image handle (same pattern as CardinalBlankImage).
+struct BrushedMetalPanelTextured : rack::TransparentWidget {
+  int hp_width;
+  std::shared_ptr<rack::window::Image> tex;
+  int tex_w = 0, tex_h = 0;
+
+  BrushedMetalPanelTextured(int hp) : hp_width(hp) {
+    box.size = rack::mm2px(rack::Vec(hp * HP_UNIT, HEIGHT));
+  }
+
+  void draw(const DrawArgs &args) override {
+    float w = box.size.x;
+    float h = box.size.y;
+
+    // 1 + 3. Brushed metal texture, scaled so its height matches the panel
+    //        and tiled horizontally. UVs anchored at (0,0) in panel space —
+    //        cross-panel grain continuity is a follow-up.
+    if (!tex) {
+      tex = APP->window->loadImage(
+          rack::asset::plugin(pluginInstance, "res/textures/brushed_metal.png"));
+      if (tex)
+        nvgImageSize(args.vg, tex->handle, &tex_w, &tex_h);
+    }
+    if (tex && tex_h > 0) {
+      float sx = h / (float)tex_h;
+      float paint_w = tex_w * sx;
+      NVGpaint p =
+          nvgImagePattern(args.vg, 0.f, 0.f, paint_w, h, 0.f, tex->handle, 1.f);
+      nvgBeginPath(args.vg);
+      nvgRect(args.vg, 0.f, 0.f, w, h);
+      nvgFillPaint(args.vg, p);
+      nvgFill(args.vg);
+    }
+
+    // 2. Specular sheen band (aligned across panels, same as procedural).
+    float bc = h * 0.30f;
+    float br = h * 0.34f;
+    NVGpaint sheenUp = nvgLinearGradient(args.vg, 0, bc - br, 0, bc,
+                                         nvgRGBA(0xff, 0xff, 0xff, 0x00),
+                                         nvgRGBA(0xff, 0xff, 0xff, 0x24));
+    nvgBeginPath(args.vg);
+    nvgRect(args.vg, 0, bc - br, w, br);
+    nvgFillPaint(args.vg, sheenUp);
+    nvgFill(args.vg);
+    NVGpaint sheenDn = nvgLinearGradient(args.vg, 0, bc, 0, bc + br,
+                                         nvgRGBA(0xff, 0xff, 0xff, 0x24),
+                                         nvgRGBA(0xff, 0xff, 0xff, 0x00));
+    nvgBeginPath(args.vg);
+    nvgRect(args.vg, 0, bc, w, br);
+    nvgFillPaint(args.vg, sheenDn);
+    nvgFill(args.vg);
+
+    // 4. Edge shading — top highlight + bottom shadow.
+    NVGpaint topShade = nvgLinearGradient(args.vg, 0, 0, 0, 6,
+                                          nvgRGBA(0xff, 0xff, 0xff, 0x1e),
+                                          nvgRGBA(0xff, 0xff, 0xff, 0x00));
+    nvgBeginPath(args.vg);
+    nvgRect(args.vg, 0, 0, w, 6);
+    nvgFillPaint(args.vg, topShade);
+    nvgFill(args.vg);
+
+    NVGpaint botShade = nvgLinearGradient(args.vg, 0, h - 10, 0, h,
+                                          nvgRGBA(0x00, 0x00, 0x00, 0x00),
+                                          nvgRGBA(0x00, 0x00, 0x00, 0x40));
+    nvgBeginPath(args.vg);
+    nvgRect(args.vg, 0, h - 10, w, 10);
+    nvgFillPaint(args.vg, botShade);
+    nvgFill(args.vg);
+
+    // 5. Thin outer border.
+    nvgBeginPath(args.vg);
+    nvgRect(args.vg, 0.5f, 0.5f, w - 1.f, h - 1.f);
+    nvgStrokeColor(args.vg, nvgRGBA(0x00, 0x00, 0x00, 0x90));
+    nvgStrokeWidth(args.vg, 1.f);
+    nvgStroke(args.vg);
+  }
+};

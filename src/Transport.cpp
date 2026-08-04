@@ -288,7 +288,7 @@ struct TransportDisplay : public DynamicOverlay {
 struct TransportWidget : ModuleWidget {
   TransportWidget(Transport *module) {
     setModule(module);
-    setPanel(new BrushedMetalPanel(HP));
+    setPanel(new BrushedMetalPanelTextured(HP));
 
     Vec lenLoc = transportGrid.loc(4, 1);
     Vec tapLenLoc = transportGrid.loc(4, 3);

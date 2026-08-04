@@ -34,3 +34,4 @@ extern Model *modelNegativeHarmony;
 extern Model *modelEnigmaCurryMixer8;
 extern Model *modelEnigmaCurryTrackerHost;
 extern Model *modelEnigmaCurryWebBridge;
+extern Model *modelBrushedTest;

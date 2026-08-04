@@ -81,6 +81,14 @@
             "tags": [
                 "Clock", "Utility"
             ]
+        },
+        {
+            "slug": "BrushedTest",
+            "name": "BrushedTest",
+            "description": "60HP empty panel — debug fixture for the brushed-metal panel texture.",
+            "tags": [
+                "Blank"
+            ]
         }
     ]
 }

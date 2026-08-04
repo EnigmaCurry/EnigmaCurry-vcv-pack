@@ -1,8 +1,8 @@
 // BrushedTest — a wide, empty module used to eyeball the brushed-metal
 // panel texture at HP counts far beyond any real module in the pack.
 //
-// The panel is BrushedMetalPanelTextured (same class Transport uses); the
-// only thing we're inspecting is horizontal tileability and overall grain
+// Uses BrushedMetalPanel (same class every other module uses); the only
+// thing we're inspecting is horizontal tileability and overall grain
 // density on a very wide surface.
 
 #include "components.hpp"
@@ -23,7 +23,7 @@ struct BrushedTest : Module {
 struct BrushedTestWidget : ModuleWidget {
   BrushedTestWidget(BrushedTest *module) {
     setModule(module);
-    setPanel(new BrushedMetalPanelTextured(HP));
+    setPanel(new BrushedMetalPanel(HP));
 
     // Single centred label so the panel isn't visually empty — makes it
     // easier to spot tile seams if any exist.

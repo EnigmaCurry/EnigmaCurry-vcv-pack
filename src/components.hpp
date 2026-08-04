@@ -14,10 +14,10 @@
  *
  * For a full copy of the GNU General Public License see the /LICENSE file.
  */
+#include "brushed_metal.hpp"
 #include "plugin.hpp"
 #include "rack.hpp"
 #include <iostream>
-#include <random>
 #include <vector>
 
 #define HEIGHT 128.5
@@ -174,129 +174,24 @@ struct DynamicOverlay : rack::TransparentWidget {
 std::string padTripleDigits(int num, int wide);
 std::string padTripleDigits(int num);
 
-// Procedural gunmetal brushed-steel panel. Sized purely from HP; no artwork.
-// Wrapped in a FramebufferWidget so this is rasterized once and cached.
+// Brushed-aluminium panel. Sized purely from HP; no artwork on disk.
 //
 // Layered back-to-front:
-//   1. Base linear gradient (dark gunmetal)
-//   2. Specular sheen — soft horizontal bright band, aligned across all
-//      panels so the reflection reads as one light source hitting the rack
-//   3. Fine brushed grain — shared seed → grain lines up across panels,
-//      giving the "one sheet of metal" illusion
-//   4. Edge shading (subtle top highlight + bottom shadow)
-//   5. Outer border
-struct BrushedMetalDraw : rack::TransparentWidget {
-  int hp_width;
-  BrushedMetalDraw(int hp) : hp_width(hp) {
-    box.size = rack::mm2px(rack::Vec(hp * HP_UNIT, HEIGHT));
-  }
-  void draw(const DrawArgs &args) override {
-    float w = box.size.x;
-    float h = box.size.y;
-
-    // 1. Base gradient — narrow range so the sheen and grain read on top.
-    NVGpaint bg = nvgLinearGradient(args.vg, 0, 0, 0, h,
-                                    nvgRGB(0x2e, 0x32, 0x36),
-                                    nvgRGB(0x1e, 0x21, 0x23));
-    nvgBeginPath(args.vg);
-    nvgRect(args.vg, 0, 0, w, h);
-    nvgFillPaint(args.vg, bg);
-    nvgFill(args.vg);
-
-    // 2. Specular sheen band — anisotropic reflection off horizontal grain.
-    //    Band centre at a fixed y-fraction so every panel's sheen lines up
-    //    with its neighbours, reading as a single light source across the
-    //    whole rack row.
-    float bc = h * 0.30f;
-    float br = h * 0.34f;
-    NVGpaint sheenUp = nvgLinearGradient(args.vg, 0, bc - br, 0, bc,
-                                         nvgRGBA(0xff, 0xff, 0xff, 0x00),
-                                         nvgRGBA(0xff, 0xff, 0xff, 0x24));
-    nvgBeginPath(args.vg);
-    nvgRect(args.vg, 0, bc - br, w, br);
-    nvgFillPaint(args.vg, sheenUp);
-    nvgFill(args.vg);
-    NVGpaint sheenDn = nvgLinearGradient(args.vg, 0, bc, 0, bc + br,
-                                         nvgRGBA(0xff, 0xff, 0xff, 0x24),
-                                         nvgRGBA(0xff, 0xff, 0xff, 0x00));
-    nvgBeginPath(args.vg);
-    nvgRect(args.vg, 0, bc, w, br);
-    nvgFillPaint(args.vg, sheenDn);
-    nvgFill(args.vg);
-
-    // 3. Fine horizontal grain — shared seed keeps lines aligned across
-    //    every panel (continuous-sheet illusion).
-    {
-      std::mt19937 rng(0xC0FFEEu);
-      std::uniform_real_distribution<float> y_dist(0.f, h);
-      std::uniform_int_distribution<int> a_dist(3, 16);
-      std::uniform_int_distribution<int> tone(0, 1);
-      int line_count = (int)(h * 2.0f);
-      nvgLineCap(args.vg, NVG_BUTT);
-      nvgStrokeWidth(args.vg, 1.f);
-      for (int i = 0; i < line_count; i++) {
-        float y = y_dist(rng);
-        int a = a_dist(rng);
-        NVGcolor c = tone(rng) ? nvgRGBA(0xff, 0xff, 0xff, a)
-                               : nvgRGBA(0x00, 0x00, 0x00, a);
-        nvgBeginPath(args.vg);
-        nvgMoveTo(args.vg, 0, y);
-        nvgLineTo(args.vg, w, y);
-        nvgStrokeColor(args.vg, c);
-        nvgStroke(args.vg);
-      }
-    }
-
-    // 4. Edge shading — subtle top highlight + bottom shadow.
-    NVGpaint topShade = nvgLinearGradient(args.vg, 0, 0, 0, 6,
-                                          nvgRGBA(0xff, 0xff, 0xff, 0x1e),
-                                          nvgRGBA(0xff, 0xff, 0xff, 0x00));
-    nvgBeginPath(args.vg);
-    nvgRect(args.vg, 0, 0, w, 6);
-    nvgFillPaint(args.vg, topShade);
-    nvgFill(args.vg);
-
-    NVGpaint botShade = nvgLinearGradient(args.vg, 0, h - 10, 0, h,
-                                          nvgRGBA(0x00, 0x00, 0x00, 0x00),
-                                          nvgRGBA(0x00, 0x00, 0x00, 0x40));
-    nvgBeginPath(args.vg);
-    nvgRect(args.vg, 0, h - 10, w, 10);
-    nvgFillPaint(args.vg, botShade);
-    nvgFill(args.vg);
-
-    // 5. Thin outer border — grounds the panel against neighbours.
-    nvgBeginPath(args.vg);
-    nvgRect(args.vg, 0.5f, 0.5f, w - 1.f, h - 1.f);
-    nvgStrokeColor(args.vg, nvgRGBA(0x00, 0x00, 0x00, 0x90));
-    nvgStrokeWidth(args.vg, 1.f);
-    nvgStroke(args.vg);
-  }
-};
-
-struct BrushedMetalPanel : rack::FramebufferWidget {
-  BrushedMetalPanel(int hp_width) {
-    box.size = rack::mm2px(rack::Vec(hp_width * HP_UNIT, HEIGHT));
-    BrushedMetalDraw *d = new BrushedMetalDraw(hp_width);
-    addChild(d);
-  }
-};
-
-// Photographic-brushed-aluminium variant. Replaces steps 1 (base gradient) +
-// 3 (procedural grain) of BrushedMetalDraw with a single tiled blit of a
-// pre-baked texture; keeps the sheen / edges / border on top.
+//   1. Runtime-generated brushed-metal texture (see brushed_metal.hpp),
+//      scaled to panel height, tiled horizontally. Generated once per
+//      NVGcontext, shared across every panel via brushed_metal::getHandle.
+//   2. Specular sheen — soft horizontal bright band, y-fraction is fixed
+//      so every panel's sheen aligns with its neighbours, reading as one
+//      light source across the whole rack row.
+//   3. Edge shading — subtle top highlight + bottom shadow.
+//   4. Thin outer border grounding the panel against neighbours.
 //
-// Not FBO-cached: the draw is now one image fill plus a handful of gradient
-// rects, which is cheaper than the procedural grain's ~1000 stroke calls, so
-// there is nothing to amortise.
-//
-// Texture is lazy-loaded on first draw so args.vg is the correct NanoVG
-// context for the created image handle (same pattern as CardinalBlankImage).
-struct BrushedMetalPanelTextured : rack::TransparentWidget {
+// Not FBO-cached: draw is one image fill plus a handful of gradient rects,
+// cheap enough to run every frame.
+struct BrushedMetalPanel : rack::TransparentWidget {
   int hp_width;
-  std::shared_ptr<rack::window::Image> tex;
-  int tex_w = 0, tex_h = 0;
 
-  BrushedMetalPanelTextured(int hp) : hp_width(hp) {
+  BrushedMetalPanel(int hp) : hp_width(hp) {
     box.size = rack::mm2px(rack::Vec(hp * HP_UNIT, HEIGHT));
   }
 
@@ -304,20 +199,15 @@ struct BrushedMetalPanelTextured : rack::TransparentWidget {
     float w = box.size.x;
     float h = box.size.y;
 
-    // 1 + 3. Brushed metal texture, scaled so its height matches the panel
+    // 1 + 3. Brushed-metal texture, scaled so its height matches the panel
     //        and tiled horizontally. UVs anchored at (0,0) in panel space —
     //        cross-panel grain continuity is a follow-up.
-    if (!tex) {
-      tex = APP->window->loadImage(
-          rack::asset::plugin(pluginInstance, "res/textures/brushed_metal.png"));
-      if (tex)
-        nvgImageSize(args.vg, tex->handle, &tex_w, &tex_h);
-    }
-    if (tex && tex_h > 0) {
-      float sx = h / (float)tex_h;
-      float paint_w = tex_w * sx;
+    int handle = brushed_metal::getHandle(args.vg);
+    if (handle >= 0) {
+      float sx = h / (float)brushed_metal::H;
+      float paint_w = brushed_metal::W * sx;
       NVGpaint p =
-          nvgImagePattern(args.vg, 0.f, 0.f, paint_w, h, 0.f, tex->handle, 1.f);
+          nvgImagePattern(args.vg, 0.f, 0.f, paint_w, h, 0.f, handle, 1.f);
       nvgBeginPath(args.vg);
       nvgRect(args.vg, 0.f, 0.f, w, h);
       nvgFillPaint(args.vg, p);

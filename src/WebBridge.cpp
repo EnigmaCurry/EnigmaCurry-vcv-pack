@@ -106,6 +106,13 @@ struct WebBridgeShared {
     uint32_t timeBar;                // 4200
     uint32_t timeBeat;               // 4204
     uint32_t beatsPerBar;            // 4208
+    // Elapsed run time in seconds since last reset, accumulated only
+    // while runRequested is set — paused time doesn't count. Float
+    // precision is fine here: at a session length of ~1 hour we still
+    // hold sub-millisecond accuracy, well below the mm:ss display's
+    // resolution. Reset to 0 by the same epoch handler that snaps
+    // the bar/beat cursor back to 1.1.
+    float    runElapsedSeconds;      // 4212
 };
 
 static_assert(sizeof(WebBridgeClockEvent) == 16, "WebBridgeClockEvent layout drift");
@@ -122,6 +129,7 @@ static_assert(offsetof(WebBridgeShared, clockRatioLabels) == 4136, "layout: cloc
 static_assert(offsetof(WebBridgeShared, timeBar)          == 4200, "layout: timeBar");
 static_assert(offsetof(WebBridgeShared, timeBeat)         == 4204, "layout: timeBeat");
 static_assert(offsetof(WebBridgeShared, beatsPerBar)      == 4208, "layout: beatsPerBar");
+static_assert(offsetof(WebBridgeShared, runElapsedSeconds) == 4212, "layout: runElapsedSeconds");
 
 alignas(16) WebBridgeShared g_webbridge_state = {
     /* currentFrame      */ 0,
@@ -138,6 +146,7 @@ alignas(16) WebBridgeShared g_webbridge_state = {
     /* timeBar           */ 1,
     /* timeBeat          */ 1,
     /* beatsPerBar       */ 4,
+    /* runElapsedSeconds */ 0.0f,
 };
 
 extern "C" {
@@ -208,6 +217,14 @@ struct EnigmaCurryWebBridge : Module {
         const bool run = g_webbridge_state.runRequested != 0;
         outputs[RUN_OUT].setVoltage(run ? 10.f : -10.f);
 
+        // Elapsed run time — only ticks while the transport is running,
+        // matching the semantics of the RUN gate driving Clocked. Wall-
+        // clock pause time is excluded, which is what a musician cares
+        // about when reading the mm:ss counter on the display.
+        if (run) {
+            g_webbridge_state.runElapsedSeconds += args.sampleTime;
+        }
+
         // ---- JS → audio: RESET (epoch → pulse) ------------------------
         const uint32_t epoch = g_webbridge_state.resetEpoch;
         if (epoch != lastSeenResetEpoch) {
@@ -218,6 +235,7 @@ struct EnigmaCurryWebBridge : Module {
             // index to match: the next CLK0 rising edge becomes 1.1.
             g_webbridge_state.timeBar  = 1;
             g_webbridge_state.timeBeat = 1;
+            g_webbridge_state.runElapsedSeconds = 0.f;
             firstBeatSeen = false;
         }
         const bool resetHigh = resetPulse.process(args.sampleTime);

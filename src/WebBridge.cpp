@@ -30,8 +30,10 @@
 
 #include "components.hpp"
 #include "plugin.hpp"
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <cstring>
 // rack.hpp deliberately does NOT re-export the free `getPlugin(slug)`
 // lookup (only <plugin/Plugin.hpp> and <plugin/Model.hpp>), so pull the
 // header in explicitly for the autopatch context-menu action.
@@ -58,11 +60,30 @@ struct WebBridgeClockEvent {         // 16 bytes
     uint32_t _pad;                   // 12 padding to 16
 };
 
+// Port-connection bitmap layout (audio thread → JS). Fixed bit
+// positions are part of the shared ABI — do not reorder.
+static constexpr uint32_t WB_CONN_BIT_CLK0      = 1u << 0;
+static constexpr uint32_t WB_CONN_BIT_CLK1      = 1u << 1;
+static constexpr uint32_t WB_CONN_BIT_CLK2      = 1u << 2;
+static constexpr uint32_t WB_CONN_BIT_CLK3      = 1u << 3;
+static constexpr uint32_t WB_CONN_MASK_INPUTS   = 0x0fu;   // bits 0..3
+static constexpr uint32_t WB_CONN_BIT_RUN_OUT   = 1u << 4;
+static constexpr uint32_t WB_CONN_BIT_RESET_OUT = 1u << 5;
+static constexpr uint32_t WB_CONN_BIT_BPM_OUT   = 1u << 6;
+static constexpr uint32_t WB_CONN_MASK_OUTPUTS  = 0x70u;   // bits 4..6
+
+// Ratio-label buffer: per-input UTF-8 string reported by the
+// upstream module's ParamQuantity::getDisplayValueString() (or "×1"
+// for the Clocked master). 16 bytes accommodates typical ratio
+// glyphs — "×" and "÷" are 2-byte in UTF-8, so a ratio like "÷32"
+// takes 4 bytes; 16 gives comfortable headroom for future units.
+#define WB_RATIO_LABEL_BYTES 16
+
 struct WebBridgeShared {
     // Header — audio thread writes each sample
     uint64_t currentFrame;           // 0   monotonic samples since module ctor
     uint32_t sampleRate;             // 8
-    uint32_t _pad0;                  // 12  align to 16
+    uint32_t connectionState;        // 12  bitmap of cabled ports; see WB_CONN_* above
     // JS → audio (JS writes, audio reads)
     uint32_t runRequested;           // 16  0/1
     uint32_t resetEpoch;             // 20  JS increments to fire reset pulse
@@ -71,30 +92,39 @@ struct WebBridgeShared {
     // Audio → JS SPSC ring
     uint32_t eventHead;              // 32  audio writes
     uint32_t eventTail;              // 36  JS writes after drain
-    WebBridgeClockEvent events[WEBBRIDGE_EVENT_CAPACITY];  // 40
+    WebBridgeClockEvent events[WEBBRIDGE_EVENT_CAPACITY];  // 40..4136
+    // UI-thread-written ratio labels, one per CLK input (CLK0..CLK3).
+    // Empty when input is unconnected or source is not identified as
+    // Clocked. Null-terminated within the buffer. Kept at the tail so
+    // adding this field doesn't shift any earlier offset — JS's
+    // existing constants remain valid.
+    char clockRatioLabels[4][WB_RATIO_LABEL_BYTES];  // 4136..4200
 };
 
 static_assert(sizeof(WebBridgeClockEvent) == 16, "WebBridgeClockEvent layout drift");
-static_assert(offsetof(WebBridgeShared, currentFrame) == 0,  "layout: currentFrame");
-static_assert(offsetof(WebBridgeShared, sampleRate)   == 8,  "layout: sampleRate");
-static_assert(offsetof(WebBridgeShared, runRequested) == 16, "layout: runRequested");
-static_assert(offsetof(WebBridgeShared, resetEpoch)   == 20, "layout: resetEpoch");
-static_assert(offsetof(WebBridgeShared, bpm)          == 24, "layout: bpm");
-static_assert(offsetof(WebBridgeShared, eventHead)    == 32, "layout: eventHead");
-static_assert(offsetof(WebBridgeShared, eventTail)    == 36, "layout: eventTail");
-static_assert(offsetof(WebBridgeShared, events)       == 40, "layout: events");
+static_assert(offsetof(WebBridgeShared, currentFrame)     == 0,    "layout: currentFrame");
+static_assert(offsetof(WebBridgeShared, sampleRate)       == 8,    "layout: sampleRate");
+static_assert(offsetof(WebBridgeShared, connectionState)  == 12,   "layout: connectionState");
+static_assert(offsetof(WebBridgeShared, runRequested)     == 16,   "layout: runRequested");
+static_assert(offsetof(WebBridgeShared, resetEpoch)       == 20,   "layout: resetEpoch");
+static_assert(offsetof(WebBridgeShared, bpm)              == 24,   "layout: bpm");
+static_assert(offsetof(WebBridgeShared, eventHead)        == 32,   "layout: eventHead");
+static_assert(offsetof(WebBridgeShared, eventTail)        == 36,   "layout: eventTail");
+static_assert(offsetof(WebBridgeShared, events)           == 40,   "layout: events");
+static_assert(offsetof(WebBridgeShared, clockRatioLabels) == 4136, "layout: clockRatioLabels");
 
 alignas(16) WebBridgeShared g_webbridge_state = {
-    /* currentFrame */ 0,
-    /* sampleRate   */ 48000,
-    /* _pad0        */ 0,
-    /* runRequested */ 0,
-    /* resetEpoch   */ 0,
-    /* bpm          */ 120.0f,
-    /* _pad1        */ 0,
-    /* eventHead    */ 0,
-    /* eventTail    */ 0,
-    /* events       */ {},
+    /* currentFrame      */ 0,
+    /* sampleRate        */ 48000,
+    /* connectionState   */ 0,
+    /* runRequested      */ 0,
+    /* resetEpoch        */ 0,
+    /* bpm               */ 120.0f,
+    /* _pad1             */ 0,
+    /* eventHead         */ 0,
+    /* eventTail         */ 0,
+    /* events            */ {},
+    /* clockRatioLabels  */ {{0}, {0}, {0}, {0}},
 };
 
 extern "C" {
@@ -136,6 +166,22 @@ struct EnigmaCurryWebBridge : Module {
         // ---- Header ----------------------------------------------------
         g_webbridge_state.currentFrame++;
         const uint64_t frame = g_webbridge_state.currentFrame;
+
+        // Republish the current cable-connectivity bitmap so the JS
+        // side can react to plug/unplug without polling the Rack API.
+        // isConnected() is a cheap flag lookup (see Port::isConnected in
+        // rack/engine/Port.hpp — a bool field, no traversal); we still
+        // pay 7 branches + a store per sample, which is a rounding
+        // error next to the other work on this thread.
+        uint32_t conn = 0;
+        if (inputs[CLK0].isConnected())      conn |= WB_CONN_BIT_CLK0;
+        if (inputs[CLK1].isConnected())      conn |= WB_CONN_BIT_CLK1;
+        if (inputs[CLK2].isConnected())      conn |= WB_CONN_BIT_CLK2;
+        if (inputs[CLK3].isConnected())      conn |= WB_CONN_BIT_CLK3;
+        if (outputs[RUN_OUT].isConnected())   conn |= WB_CONN_BIT_RUN_OUT;
+        if (outputs[RESET_OUT].isConnected()) conn |= WB_CONN_BIT_RESET_OUT;
+        if (outputs[BPM_OUT].isConnected())   conn |= WB_CONN_BIT_BPM_OUT;
+        g_webbridge_state.connectionState = conn;
 
         // ---- JS → audio: RUN ------------------------------------------
         // Bipolar level: +10V when running, -10V when stopped. The 20V
@@ -437,6 +483,106 @@ struct EnigmaCurryWebBridgeWidget : ModuleWidget {
             [this]() { autopatchClocked(); },
             /* disabled */ alreadyPatched
         ));
+    }
+
+    // UI-thread poll: walk cables from each CLK input to its source
+    // port, and if the source is a Clocked module, copy its ratio
+    // ParamQuantity's display string into the shared state so the JS
+    // side can label each LED. The audio thread mustn't do this — the
+    // cable graph lives in the widget layer, and getDisplayValueString
+    // allocates. We already run at 60Hz here; a 6Hz throttle is plenty
+    // since the labels only change when the user turns a Clocked knob.
+    int labelPollCounter = 0;
+    void step() override {
+        ModuleWidget::step();
+        if (!module) return;
+        if (++labelPollCounter < 10) return;
+        labelPollCounter = 0;
+        refreshRatioLabels();
+    }
+
+    // Format a Clocked-style ratio (positive = multiply, negative =
+    // divide) as a compact display string with the standard multiply /
+    // divide glyphs. Integer values print without a decimal; fractional
+    // values (1.5, 2.5) keep a single decimal. UTF-8 output: "×" is
+    // 0xC3 0x97, "÷" is 0xC3 0xB7.
+    static std::string formatRatio(float r) {
+        if (!std::isfinite(r) || r == 0.f) return "";
+        const bool div = r < 0.f;
+        const float mag = div ? -r : r;
+        char num[16];
+        if (mag == std::floor(mag))
+            std::snprintf(num, sizeof(num), "%d", (int)std::lround(mag));
+        else
+            std::snprintf(num, sizeof(num), "%.1f", mag);
+        std::string out = div ? "\xc3\xb7" : "\xc3\x97";
+        out += num;
+        return out;
+    }
+
+    void refreshRatioLabels() {
+        // Cache Clocked's Model* the first time we find it — plugin
+        // models live for the process lifetime, so this is safe.
+        static rack::plugin::Model* clockedModel = nullptr;
+        if (!clockedModel) {
+            if (auto* p = rack::plugin::getPlugin("ImpromptuModular"))
+                clockedModel = p->getModel("Clocked");
+        }
+
+        // Zero every slot up front — any input that isn't cabled to a
+        // Clocked this tick shows no label, even if it did before.
+        std::memset(g_webbridge_state.clockRatioLabels, 0,
+                    sizeof(g_webbridge_state.clockRatioLabels));
+
+        if (!clockedModel) return;
+
+        auto writeLabel = [](int i, const std::string& s) {
+            const size_t cap = WB_RATIO_LABEL_BYTES - 1;  // leave 1 for null
+            const size_t n = std::min(s.size(), cap);
+            std::memcpy(g_webbridge_state.clockRatioLabels[i], s.data(), n);
+            g_webbridge_state.clockRatioLabels[i][n] = 0;
+        };
+
+        for (int i = 0; i < 4; ++i) {
+            // Find the PortWidget for this input port id (getInputs()
+            // isn't ordered by portId, so scan for a match).
+            PortWidget* myPort = nullptr;
+            for (PortWidget* p : getInputs()) {
+                if (p->portId == EnigmaCurryWebBridge::CLK0 + i) {
+                    myPort = p; break;
+                }
+            }
+            if (!myPort) continue;
+            auto cables = APP->scene->rack->getCablesOnPort(myPort);
+            if (cables.empty()) continue;
+            CableWidget* cw = *cables.begin();  // inputs take at most one cable
+            // Source is the port on the OTHER end of the cable.
+            PortWidget* src = (cw->outputPort == myPort) ? cw->inputPort
+                                                        : cw->outputPort;
+            if (!src || !src->module) continue;
+            if (src->module->model != clockedModel) continue;
+
+            // Clocked CLK_OUTPUTS: 0 = master (1×, no ratio param),
+            // 1..3 = sub-clocks whose ratio lives at RATIO_PARAM[N].
+            const int srcId = src->portId;
+            if (srcId < 0 || srcId > 3) continue;
+            if (srcId == 0) {
+                writeLabel(i, "\xc3\x97" "1");  // "×1" in UTF-8
+                continue;
+            }
+            // Ratio param index matches the sub-clock output index
+            // (both start at 1). See the clocked_ids namespace above
+            // for the derivation. RatioParam::getDisplayValue() returns
+            // the actual multiplier (positive for x, negative for ÷),
+            // so we format from that directly rather than using
+            // getDisplayValueString() which appends Clocked's ugly
+            // " (÷)" unit suffix.
+            const int paramIdx = srcId;
+            if (paramIdx >= (int)src->module->paramQuantities.size()) continue;
+            auto* pq = src->module->paramQuantities[paramIdx];
+            if (!pq) continue;
+            writeLabel(i, formatRatio(pq->getDisplayValue()));
+        }
     }
 
     EnigmaCurryWebBridgeWidget(EnigmaCurryWebBridge* module) {

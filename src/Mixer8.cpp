@@ -39,6 +39,11 @@
 #include "plugin.hpp"
 #include <cmath>
 
+// rack.hpp deliberately does NOT re-export the free `getPlugin(slug)`
+// lookup, so pull the header in explicitly for the autopatch
+// context-menu action (matches WebBridge.cpp).
+#include <plugin.hpp>
+
 #ifdef __EMSCRIPTEN__
 # include <emscripten.h>
 # define MIXER8_EXPORT EMSCRIPTEN_KEEPALIVE
@@ -217,11 +222,19 @@ struct EnigmaCurryMixer8Widget : ModuleWidget {
         addInput(createInputCentered<PJ301MPort>(
             at(8, 1), module, EnigmaCurryMixer8::RET_BR));
 
-        // Col 2 rows 3,6: stereo master out (matches lane A/B boundaries).
+        // Col 2: stereo master out, y-pinned to align with Host Audio's
+        // Left/M and Right jack CENTERS. Host Audio uses createInput (top-
+        // left origin) at startY=73 with padding=29 (Cardinal
+        // ModuleWidgets.hpp), so its jack centers land at y=73+11.85 and
+        // 102+11.85 (PJ301M is 23.7 px tall). Using createOutputCentered
+        // here means we point at those centers directly.
+        const float col2X = at(0, 2).x;
+        const Vec outLPos = Vec(col2X, 73.f + 11.85f);
+        const Vec outRPos = Vec(col2X, 102.f + 11.85f);
         addOutput(createOutputCentered<PJ301MPort>(
-            at(3, 2), module, EnigmaCurryMixer8::OUT_L));
+            outLPos, module, EnigmaCurryMixer8::OUT_L));
         addOutput(createOutputCentered<PJ301MPort>(
-            at(6, 2), module, EnigmaCurryMixer8::OUT_R));
+            outRPos, module, EnigmaCurryMixer8::OUT_R));
 
         // Static labels: module name + tiny channel numbers + aux tokens
         // + master L/R marks. Sends use output-black bg, returns use
@@ -255,12 +268,241 @@ struct EnigmaCurryMixer8Widget : ModuleWidget {
                          WHITE, RED_TRANSPARENT);
         overlay->addText("BR", 9, at(8, 1).plus(Vec(-20, 3)),
                          WHITE, RED_TRANSPARENT);
-        overlay->addText("L", 10, at(3, 2).plus(Vec(-20, 3)),
+        overlay->addText("L", 10, outLPos.plus(Vec(-20, 3)),
                          WHITE, BLACK_TRANSPARENT);
-        overlay->addText("R", 10, at(6, 2).plus(Vec(-20, 3)),
+        overlay->addText("R", 10, outRPos.plus(Vec(-20, 3)),
                          WHITE, BLACK_TRANSPARENT);
         buffer->addChild(overlay);
         addChild(buffer);
+    }
+
+    // -------------------------------------------------------------------
+    // Autopatch: wire Mixer8's OUT_L/OUT_R to a Cardinal HostAudio2's
+    // Left/M + Right inputs. Reuse an existing HostAudio2 in the rack if
+    // its L/R inputs are both unpatched; otherwise spawn a new one and
+    // place it flush right (Mixer8's L/R outputs already sit at the same
+    // y-coords as HostAudio2's inputs, see the outLPos/outRPos comment
+    // above — right-flush lands them cable-adjacent).
+    //
+    // HostAudio2 port ids come from HostAudio<numIO>::config, which
+    // assigns numIO inputs and numIO outputs starting at 0; the widget
+    // draws them as "Left/M" and "Right" in that order.
+    // -------------------------------------------------------------------
+    static constexpr int HA2_IN_L = 0;
+    static constexpr int HA2_IN_R = 1;
+
+    static rack::plugin::Model* hostAudio2Model() {
+        rack::plugin::Plugin* cardinal = rack::plugin::getPlugin("Cardinal");
+        if (!cardinal) return nullptr;
+        return cardinal->getModel("HostAudio2");
+    }
+
+    // True if EITHER of Mixer8's OUT_L / OUT_R has a cable to a
+    // HostAudio2. Used to grey out the menu item — clicking again
+    // would either duplicate the pair or hijack the existing one.
+    bool isConnectedToHostAudio() {
+        rack::plugin::Model* haModel = hostAudio2Model();
+        if (!haModel) return false;
+        const int outIds[2] = { EnigmaCurryMixer8::OUT_L,
+                                EnigmaCurryMixer8::OUT_R };
+        for (int outId : outIds) {
+            PortWidget* myPort = nullptr;
+            for (PortWidget* p : getOutputs()) {
+                if (p->portId == outId) { myPort = p; break; }
+            }
+            if (!myPort) continue;
+            for (CableWidget* cw : APP->scene->rack->getCablesOnPort(myPort)) {
+                PortWidget* other = (cw->outputPort == myPort) ? cw->inputPort
+                                                              : cw->outputPort;
+                if (other && other->module && other->module->model == haModel)
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    // Find an existing HostAudio2 with BOTH IN_L and IN_R unpatched. If
+    // one is present we reuse it instead of spawning a duplicate — the
+    // user's rule: "ok to just hook up to an existing Host Audio, as
+    // long as its not already hooked up".
+    ModuleWidget* findUnpatchedHostAudio2() {
+        rack::plugin::Model* haModel = hostAudio2Model();
+        if (!haModel) return nullptr;
+        rack::app::RackWidget* rw = APP->scene->rack;
+        for (Widget* w : rw->getModuleContainer()->children) {
+            ModuleWidget* mw = dynamic_cast<ModuleWidget*>(w);
+            if (!mw || !mw->getModule() || mw->getModule()->model != haModel)
+                continue;
+            bool anyPatched = false;
+            for (PortWidget* p : mw->getInputs()) {
+                if (p->portId != HA2_IN_L && p->portId != HA2_IN_R) continue;
+                if (!rw->getCablesOnPort(p).empty()) {
+                    anyPatched = true; break;
+                }
+            }
+            if (!anyPatched) return mw;
+        }
+        return nullptr;
+    }
+
+    void autopatchHostAudio() {
+        if (isConnectedToHostAudio()) return;  // defensive; menu is disabled
+
+        rack::plugin::Model* haModel = hostAudio2Model();
+        if (!haModel) {
+            WARN("Mixer8 autopatch: Cardinal HostAudio2 model not found");
+            return;
+        }
+
+        rack::app::RackWidget* rw = APP->scene->rack;
+        ModuleWidget* haWidget = findUnpatchedHostAudio2();
+        history::ModuleAdd* moduleAddAction = nullptr;
+
+        if (!haWidget) {
+            // Spawn a fresh HostAudio2. Placement policy mirrors
+            // WebBridge::autopatchClocked: prefer right-flush of Mixer8
+            // (our L/R sit on the right edge, HostAudio2's L/R inputs
+            // sit on its left edge — cables run straight across). Fall
+            // back to left-flush, then shove-mode in a fixed rack, then
+            // last-resort overflow past any defined region.
+            engine::Module* haModule = haModel->createModule();
+            APP->engine->addModule(haModule);
+            haWidget = haModel->createModuleWidget(haModule);
+            if (!haWidget) {
+                WARN("Mixer8 autopatch: createModuleWidget returned null");
+                return;
+            }
+
+            const Vec preferredRight = box.pos + Vec(box.size.x, 0);
+            const Vec preferredLeft  = box.pos - Vec(haWidget->box.size.x, 0);
+            bool placed =
+                rw->requestModulePos(haWidget, preferredRight) ||
+                rw->requestModulePos(haWidget, preferredLeft);
+
+            if (!placed && rack::settings::rackspaceFixed) {
+                std::vector<std::pair<Widget*, Vec>> snap;
+                for (Widget* w : rw->getModuleContainer()->children)
+                    snap.push_back(std::make_pair(w, w->box.pos));
+                const rack::math::Rect region = rack::app::getFiniteRackBox();
+                const Vec shoveTargets[2] = {
+                    Vec(region.pos.x + region.size.x - haWidget->box.size.x,
+                        box.pos.y),
+                    Vec(region.pos.x, box.pos.y),
+                };
+                for (int t = 0; t < 2; ++t) {
+                    for (size_t i = 0; i < snap.size(); ++i)
+                        snap[i].first->setPosition(snap[i].second);
+                    rw->setModulePosForce(haWidget, shoveTargets[t]);
+                    bool allInside = region.contains(haWidget->box);
+                    if (allInside) {
+                        for (Widget* w : rw->getModuleContainer()->children) {
+                            if (!region.contains(w->box)) {
+                                allInside = false; break;
+                            }
+                        }
+                    }
+                    if (allInside) { placed = true; break; }
+                }
+                if (!placed) {
+                    for (size_t i = 0; i < snap.size(); ++i)
+                        snap[i].first->setPosition(snap[i].second);
+                }
+            }
+
+            if (!placed) {
+                Vec outsidePos = box.pos;
+                if (rack::settings::rackspaceFixed) {
+                    outsidePos.x = rack::app::getFiniteRackBox().getRight()
+                                 + RACK_GRID_WIDTH;
+                    for (size_t i = 0;
+                         i < rack::settings::rackspaceRegions.size(); ++i) {
+                        int offHP, offRow, wHP, hRow;
+                        if (!rack::settings::resolveRegionBounds(
+                                (int)i, offHP, offRow, wHP, hRow))
+                            continue;
+                        rack::math::Rect regionBox;
+                        regionBox.pos = RACK_OFFSET
+                                      + Vec(offHP * RACK_GRID_WIDTH,
+                                            offRow * RACK_GRID_HEIGHT);
+                        regionBox.size = Vec(wHP * RACK_GRID_WIDTH,
+                                             hRow * RACK_GRID_HEIGHT);
+                        rack::math::Rect proposed(outsidePos, haWidget->box.size);
+                        if (regionBox.intersects(proposed))
+                            outsidePos.x = regionBox.getRight()
+                                         + RACK_GRID_WIDTH;
+                    }
+                }
+                rw->setModulePosForce(haWidget, outsidePos);
+            }
+
+            rw->addModule(haWidget);
+
+            moduleAddAction = new history::ModuleAdd;
+            moduleAddAction->name = "auto-patch Host Audio to Mixer8";
+            moduleAddAction->setModule(haWidget);
+        }
+
+        // Wire cables. Same helper shape as WebBridge autopatchClocked.
+        auto findInput = [](ModuleWidget* mw, int portId) -> PortWidget* {
+            for (PortWidget* p : mw->getInputs())
+                if (p->portId == portId) return p;
+            return nullptr;
+        };
+        auto findOutput = [](ModuleWidget* mw, int portId) -> PortWidget* {
+            for (PortWidget* p : mw->getOutputs())
+                if (p->portId == portId) return p;
+            return nullptr;
+        };
+        auto connect = [](PortWidget* outPort, PortWidget* inPort)
+                       -> CableWidget* {
+            if (!outPort || !inPort) return nullptr;
+            CableWidget* cw = new CableWidget();
+            cw->color = APP->scene->rack->getNextCableColor();
+            cw->outputPort = outPort;
+            cw->inputPort  = inPort;
+            cw->updateCable();
+            APP->scene->rack->addCable(cw);
+            return cw;
+        };
+
+        CableWidget* cL = connect(findOutput(this, EnigmaCurryMixer8::OUT_L),
+                                  findInput (haWidget, HA2_IN_L));
+        CableWidget* cR = connect(findOutput(this, EnigmaCurryMixer8::OUT_R),
+                                  findInput (haWidget, HA2_IN_R));
+
+        // History. When we spawned a new HostAudio2 the ModuleAdd alone
+        // is enough — Rack removes cascading cables on undo. When we
+        // REUSED an existing HostAudio2, no ModuleAdd occurred, so push
+        // the cable adds explicitly so undo tears them down.
+        if (moduleAddAction) {
+            APP->history->push(moduleAddAction);
+        } else {
+            history::ComplexAction* h = new history::ComplexAction;
+            h->name = "auto-patch Host Audio to Mixer8";
+            for (CableWidget* cw : {cL, cR}) {
+                if (!cw) continue;
+                history::CableAdd* ca = new history::CableAdd;
+                ca->setCable(cw);
+                h->push(ca);
+            }
+            if (!h->isEmpty())
+                APP->history->push(h);
+            else
+                delete h;
+        }
+    }
+
+    void appendContextMenu(Menu* menu) override {
+        menu->addChild(new MenuSeparator);
+        const bool alreadyPatched = isConnectedToHostAudio();
+        menu->addChild(createMenuItem(
+            alreadyPatched
+                ? "Auto-patch Host Audio (already connected)"
+                : "Auto-patch Host Audio",
+            "",
+            [this]() { autopatchHostAudio(); },
+            /* disabled */ alreadyPatched
+        ));
     }
 };
 

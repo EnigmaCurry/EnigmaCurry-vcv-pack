@@ -272,15 +272,41 @@ struct EnigmaCurryWebBridge : Module {
 // side facing Clocked when the autopatch places Clocked to our right.
 // The LEFT column carries the port labels aligned to each row.
 //
-// Vertical order matches Clocked's own top/bottom split:
-//   rows 1..3  → outputs (RUN, RST, BPM) opposite Clocked's top inputs
-//   row  4     → visual gap
-//   rows 5..8  → inputs  (CLK0..3)        opposite Clocked's bottom outputs
+// Vertical layout, top to bottom:
+//   rows 1..3         → RESET/RUN/BPM outputs, aligned with Clocked's
+//                       top input row
+//   CLK1/CLK2/CLK3    → placed at Clocked's sub-clock RATIO-knob Y
+//                       coordinates (see WB_CLK{1,2,3}_Y_PX below) so
+//                       each input port sits directly across from the
+//                       knob that shapes its ratio
+//   CLK               → dropped to the bottom of the panel; the master
+//                       ×1 beat has no ratio knob to line up with, and
+//                       the CLK1/2/3 band no longer leaves room in the
+//                       middle for it
 // -------------------------------------------------------------------
 #define WB_HP 6
 #define WB_ROWS 10
 #define WB_COLUMNS 2
 static panel_grid<WB_HP, WB_ROWS, WB_COLUMNS> webBridgeGrid;
+
+// Y positions (panel pixels) that match Clocked's three sub-clock
+// RATIO knobs: Clocked.cpp places them at row2 + i * rowSpacingClks
+// with row2 = 172 and rowSpacingClks = 50. Rack widget coordinates
+// are pixels already, so these are used raw in Vec(...).
+//
+// Nudge: we subtract WB_CLK_KNOB_NUDGE_PX from the raw Y so the port
+// jack's optical center matches the knob's optical center. Rogan-style
+// knobs (Clocked's IMBigKnob is Rogan1PSWhiteIM) render with a drop
+// shadow inside the widget bounds — the shadow adds visual mass below
+// the cap, so a mathematically-centered knob reads as sitting slightly
+// higher than a port at the same Y. Nudging the port up compensates.
+static constexpr float WB_CLK_KNOB_NUDGE_PX = 4.f;
+static constexpr float WB_CLK1_Y_PX = 172.f - WB_CLK_KNOB_NUDGE_PX;
+static constexpr float WB_CLK2_Y_PX = 222.f - WB_CLK_KNOB_NUDGE_PX;
+static constexpr float WB_CLK3_Y_PX = 272.f - WB_CLK_KNOB_NUDGE_PX;
+// CLK sits below CLK3 with roughly a full port's clearance. Panel is
+// 380 px tall (128.5 mm × 75/25.4), so 322 leaves ~58 px of margin.
+static constexpr float WB_CLK_Y_PX  = 322.f;
 
 // -------------------------------------------------------------------
 // Autopatch: spawn a Clocked module beside this WebBridge, wire it up,
@@ -653,12 +679,19 @@ struct EnigmaCurryWebBridgeWidget : ModuleWidget {
         setModule(module);
         setPanel(new BrushedMetalPanel(WB_HP));
 
-        // All ports in col 1 (right edge). Outputs in the top group,
-        // inputs in the bottom group, with row 4 as a visual gap.
-        // Vertical order top-to-bottom: RESET, RUN, BPM, (gap), CLK,
-        // CLK1, CLK2, CLK3. The RESET/RUN/BPM ordering mirrors the
-        // top-left cluster on Clocked so the autopatch cables run
-        // straight across without crossing.
+        // All ports in col 1 (right edge). RESET/RUN/BPM outputs stay
+        // on grid rows 1..3 so they mirror Clocked's top-left cluster
+        // and the autopatch cables run straight across. CLK1/2/3 bail
+        // out of the grid to hit Clocked's RATIO-knob Y positions
+        // exactly; CLK sits at the bottom.
+        //
+        // Port X and label X come from the same 2-col split the grid
+        // uses (col 1 = 3/4 across, col 0 = 1/4 across), so the CLK
+        // row's ports and labels stay in the same columns as the
+        // outputs above.
+        const float portX  = mm2px(0.75f * WB_HP * HP_UNIT);
+        const float labelX = mm2px(0.25f * WB_HP * HP_UNIT);
+
         addOutput(createOutputCentered<PJ301MPort>(
             webBridgeGrid.loc(1, 1), module, EnigmaCurryWebBridge::RESET_OUT));
         addOutput(createOutputCentered<PJ301MPort>(
@@ -666,13 +699,13 @@ struct EnigmaCurryWebBridgeWidget : ModuleWidget {
         addOutput(createOutputCentered<PJ301MPort>(
             webBridgeGrid.loc(3, 1), module, EnigmaCurryWebBridge::BPM_OUT));
         addInput(createInputCentered<PJ301MPort>(
-            webBridgeGrid.loc(5, 1), module, EnigmaCurryWebBridge::CLK0));
+            Vec(portX, WB_CLK1_Y_PX), module, EnigmaCurryWebBridge::CLK1));
         addInput(createInputCentered<PJ301MPort>(
-            webBridgeGrid.loc(6, 1), module, EnigmaCurryWebBridge::CLK1));
+            Vec(portX, WB_CLK2_Y_PX), module, EnigmaCurryWebBridge::CLK2));
         addInput(createInputCentered<PJ301MPort>(
-            webBridgeGrid.loc(7, 1), module, EnigmaCurryWebBridge::CLK2));
+            Vec(portX, WB_CLK3_Y_PX), module, EnigmaCurryWebBridge::CLK3));
         addInput(createInputCentered<PJ301MPort>(
-            webBridgeGrid.loc(8, 1), module, EnigmaCurryWebBridge::CLK3));
+            Vec(portX, WB_CLK_Y_PX), module, EnigmaCurryWebBridge::CLK0));
 
         // Labels sit in col 0 on the same row as each port. Output
         // labels use the output-black background convention; input
@@ -690,13 +723,13 @@ struct EnigmaCurryWebBridgeWidget : ModuleWidget {
                          WHITE, BLACK_TRANSPARENT);
         overlay->addText("BPM",   10, webBridgeGrid.loc(3, 0),
                          WHITE, BLACK_TRANSPARENT);
-        overlay->addText("CLK",   10, webBridgeGrid.loc(5, 0),
+        overlay->addText("CLK1",  10, Vec(labelX, WB_CLK1_Y_PX),
                          WHITE, RED_TRANSPARENT);
-        overlay->addText("CLK1",  10, webBridgeGrid.loc(6, 0),
+        overlay->addText("CLK2",  10, Vec(labelX, WB_CLK2_Y_PX),
                          WHITE, RED_TRANSPARENT);
-        overlay->addText("CLK2",  10, webBridgeGrid.loc(7, 0),
+        overlay->addText("CLK3",  10, Vec(labelX, WB_CLK3_Y_PX),
                          WHITE, RED_TRANSPARENT);
-        overlay->addText("CLK3",  10, webBridgeGrid.loc(8, 0),
+        overlay->addText("CLK",   10, Vec(labelX, WB_CLK_Y_PX),
                          WHITE, RED_TRANSPARENT);
         buffer->addChild(overlay);
         addChild(buffer);

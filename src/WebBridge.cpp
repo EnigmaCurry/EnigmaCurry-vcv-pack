@@ -99,6 +99,13 @@ struct WebBridgeShared {
     // adding this field doesn't shift any earlier offset — JS's
     // existing constants remain valid.
     char clockRatioLabels[4][WB_RATIO_LABEL_BYTES];  // 4136..4200
+    // Time-index tracker — bar & beat since last reset. Both are
+    // 1-indexed. beatsPerBar is written by the widget thread from
+    // the CLK1 ratio (÷N → N; fallback 4). The audio thread counts
+    // CLK0 rising edges and advances bar/beat accordingly.
+    uint32_t timeBar;                // 4200
+    uint32_t timeBeat;               // 4204
+    uint32_t beatsPerBar;            // 4208
 };
 
 static_assert(sizeof(WebBridgeClockEvent) == 16, "WebBridgeClockEvent layout drift");
@@ -112,6 +119,9 @@ static_assert(offsetof(WebBridgeShared, eventHead)        == 32,   "layout: even
 static_assert(offsetof(WebBridgeShared, eventTail)        == 36,   "layout: eventTail");
 static_assert(offsetof(WebBridgeShared, events)           == 40,   "layout: events");
 static_assert(offsetof(WebBridgeShared, clockRatioLabels) == 4136, "layout: clockRatioLabels");
+static_assert(offsetof(WebBridgeShared, timeBar)          == 4200, "layout: timeBar");
+static_assert(offsetof(WebBridgeShared, timeBeat)         == 4204, "layout: timeBeat");
+static_assert(offsetof(WebBridgeShared, beatsPerBar)      == 4208, "layout: beatsPerBar");
 
 alignas(16) WebBridgeShared g_webbridge_state = {
     /* currentFrame      */ 0,
@@ -125,6 +135,9 @@ alignas(16) WebBridgeShared g_webbridge_state = {
     /* eventTail         */ 0,
     /* events            */ {},
     /* clockRatioLabels  */ {{0}, {0}, {0}, {0}},
+    /* timeBar           */ 1,
+    /* timeBeat          */ 1,
+    /* beatsPerBar       */ 4,
 };
 
 extern "C" {
@@ -145,6 +158,11 @@ struct EnigmaCurryWebBridge : Module {
     bool clockHigh[4] = {false, false, false, false};
     uint32_t lastSeenResetEpoch = 0;
     dsp::PulseGenerator resetPulse;
+    // Time-index tracking: the display shows "bar.beat" cursor position
+    // where the very first CLK0 pulse lands us at 1.1 (not 1.2). We
+    // gate the first increment on this flag so the initial pulse just
+    // marks presence rather than advancing the counter.
+    bool firstBeatSeen = false;
 
     EnigmaCurryWebBridge() {
         config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -195,6 +213,12 @@ struct EnigmaCurryWebBridge : Module {
         if (epoch != lastSeenResetEpoch) {
             lastSeenResetEpoch = epoch;
             resetPulse.trigger(1e-3f);
+            // Clocked's own reset chain will restart its beat sequence
+            // shortly after this pulse arrives, so line up the time
+            // index to match: the next CLK0 rising edge becomes 1.1.
+            g_webbridge_state.timeBar  = 1;
+            g_webbridge_state.timeBeat = 1;
+            firstBeatSeen = false;
         }
         const bool resetHigh = resetPulse.process(args.sampleTime);
         outputs[RESET_OUT].setVoltage(resetHigh ? 10.f : 0.f);
@@ -215,6 +239,27 @@ struct EnigmaCurryWebBridge : Module {
                 ev.clock = (uint32_t)i;
                 ev._pad  = 0;
                 g_webbridge_state.eventHead = head + 1;
+
+                // Time-index tracker — CLK0 (the beat) drives cursor
+                // advance; beatsPerBar comes from CLK1's ratio via the
+                // widget thread. First beat after reset holds the
+                // cursor at 1.1 so the display reads "at beat 1 of
+                // bar 1" instead of skipping straight to 1.2.
+                if (i == 0) {
+                    if (!firstBeatSeen) {
+                        firstBeatSeen = true;
+                    } else {
+                        uint32_t bpb = g_webbridge_state.beatsPerBar;
+                        if (bpb < 1) bpb = 4;
+                        uint32_t nextBeat = g_webbridge_state.timeBeat + 1;
+                        if (nextBeat > bpb) {
+                            g_webbridge_state.timeBar += 1;
+                            g_webbridge_state.timeBeat = 1;
+                        } else {
+                            g_webbridge_state.timeBeat = nextBeat;
+                        }
+                    }
+                }
             } else if (clockHigh[i] && v <= 2.f) {
                 clockHigh[i] = false;
             }
@@ -534,7 +579,14 @@ struct EnigmaCurryWebBridgeWidget : ModuleWidget {
         std::memset(g_webbridge_state.clockRatioLabels, 0,
                     sizeof(g_webbridge_state.clockRatioLabels));
 
-        if (!clockedModel) return;
+        // beatsPerBar defaults to 4 (common time) until we prove CLK1
+        // is cabled to a Clocked divisor output that says otherwise.
+        uint32_t derivedBpb = 4;
+
+        if (!clockedModel) {
+            g_webbridge_state.beatsPerBar = derivedBpb;
+            return;
+        }
 
         auto writeLabel = [](int i, const std::string& s) {
             const size_t cap = WB_RATIO_LABEL_BYTES - 1;  // leave 1 for null
@@ -581,8 +633,20 @@ struct EnigmaCurryWebBridgeWidget : ModuleWidget {
             if (paramIdx >= (int)src->module->paramQuantities.size()) continue;
             auto* pq = src->module->paramQuantities[paramIdx];
             if (!pq) continue;
-            writeLabel(i, formatRatio(pq->getDisplayValue()));
+            const float ratio = pq->getDisplayValue();
+            writeLabel(i, formatRatio(ratio));
+
+            // CLK1 defines the bar boundary. Only accept honest divisor
+            // ratios (÷N) — ×N would make each "bar" a fraction of a
+            // beat, which isn't a musically meaningful bar length, so
+            // we let the default of 4 stand in that case.
+            if (i == 1 && ratio < 0.f) {
+                int n = (int)std::lround(-ratio);
+                if (n >= 1) derivedBpb = (uint32_t)n;
+            }
         }
+
+        g_webbridge_state.beatsPerBar = derivedBpb;
     }
 
     EnigmaCurryWebBridgeWidget(EnigmaCurryWebBridge* module) {

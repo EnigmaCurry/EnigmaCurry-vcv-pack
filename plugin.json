@@ -67,14 +67,6 @@
             ]
         },
         {
-            "slug": "TrackerHost",
-            "name": "TrackerHost",
-            "description": "Headless, JS-programmed wrapper around Biset Tracker. Drives T-Synth / T-Drum / T-Clock / T-Phase / T-Quant / T-State via extern C API from the web app.",
-            "tags": [
-                "Sequencer", "Utility"
-            ]
-        },
-        {
             "slug": "WebBridge",
             "name": "WebBridge",
             "description": "JS-controlled RUN/RESET/BPM outputs and four CLK inputs streamed back to JS as timestamped rising-edge events, for browser-hosted audio-visual sync.",

@@ -23,9 +23,8 @@
  *   IN  CLK1/2/3 — composer-defined subdivisions (typically bar/16th/phrase)
  *
  * All state lives in the global `g_webbridge_state`. Two extern-C accessors
- * expose the pointer + size to JS (mirroring the TrackerHost / Mixer8
- * pattern), and the WasmDSP host's EXPORTS list keeps them in the wasm
- * export table.
+ * expose the pointer + size to JS (mirroring the Mixer8 pattern), and the
+ * WasmDSP host's EXPORTS list keeps them in the wasm export table.
  */
 
 #include "components.hpp"

@@ -28,7 +28,6 @@ void init(Plugin *p) {
   p->addModel(modelRange);
   p->addModel(modelNegativeHarmony);
   p->addModel(modelEnigmaCurryMixer8);
-  p->addModel(modelEnigmaCurryTrackerHost);
   p->addModel(modelEnigmaCurryWebBridge);
   p->addModel(modelBrushedTest);
 

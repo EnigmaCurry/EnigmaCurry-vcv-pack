@@ -31,6 +31,12 @@ Typeface fonts included are licensed under the SIL OPEN FONT LICENSE Version 1.1
   * [DSEG](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/blob/v2/res/fonts/dseg/DSEG-LICENSE.txt) Copyright (c) 2017, keshikan (http://www.keshikan.net)
   * [Manrope](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/blob/v2/res/fonts/manrope/LICENSE.txt) Copyright [https://manropefont.com/](https://manropefont.com/)
 
+The Tracker module embeds [libopenmpt](https://lib.openmpt.org/) for
+tracker file decoding. libopenmpt is released under the
+[BSD-3-Clause license](src/libopenmpt/LICENSE) — Copyright (c) 2004-2026
+OpenMPT Project Developers and Contributors; Copyright (c) 1997-2003
+Olivier Lapicque.
+
 ## Changelog
 
  * [CHANGELOG.txt](https://github.com/EnigmaCurry/EnigmaCurry-vcv-pack/blob/v2/CHANGELOG.txt).

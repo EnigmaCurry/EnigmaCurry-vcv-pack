@@ -32,5 +32,6 @@ extern Model *modelPulse;
 extern Model *modelRange;
 extern Model *modelNegativeHarmony;
 extern Model *modelEnigmaCurryMixer8;
+extern Model *modelEnigmaCurryTracker;
 extern Model *modelEnigmaCurryWebBridge;
 extern Model *modelBrushedTest;

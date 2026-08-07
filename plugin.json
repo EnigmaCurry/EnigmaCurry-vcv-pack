@@ -67,6 +67,14 @@
             ]
         },
         {
+            "slug": "Tracker",
+            "name": "Tracker",
+            "description": "libopenmpt tracker file player (.mptm/.it/.xm/.mod/…). Loads a module file via right-click menu; the file drives its own tempo/meter. Run gate + Reset trigger inputs, stereo (L/R) audio out, BPM CV (1V/oct around 120), plus beat and bar triggers derived from the file's per-pattern rows-per-beat / rows-per-measure.",
+            "tags": [
+                "Sampler", "Sequencer"
+            ]
+        },
+        {
             "slug": "WebBridge",
             "name": "WebBridge",
             "description": "JS-controlled RUN/RESET/BPM outputs and four CLK inputs streamed back to JS as timestamped rising-edge events, for browser-hosted audio-visual sync.",

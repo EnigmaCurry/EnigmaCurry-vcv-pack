@@ -248,7 +248,7 @@ struct PulseWidget : ModuleWidget {
     {
       FramebufferWidget *buffer = new FramebufferWidget();
       DynamicOverlay *overlay = new DynamicOverlay(HP);
-      overlay->addText("Pulse", 20, Vec(mm2px(HP * HP_UNIT / 2), 25), WHITE,
+      overlay->addText("Pulse", 14, Vec(mm2px(HP * HP_UNIT / 2), 14), WHITE,
                        CLEAR, MANROPE);
       overlay->addText("LENGTH", 9, lenLoc.minus(Vec(0, 20)), WHITE,
                        RED_TRANSPARENT, FANTASQUE, 0);

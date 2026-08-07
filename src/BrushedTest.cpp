@@ -29,8 +29,8 @@ struct BrushedTestWidget : ModuleWidget {
     // easier to spot tile seams if any exist.
     FramebufferWidget *buffer = new FramebufferWidget();
     DynamicOverlay *overlay = new DynamicOverlay(HP);
-    overlay->addText("BrushedTest 60HP", 20,
-                     Vec(mm2px(HP * HP_UNIT / 2), 25), WHITE, CLEAR, MANROPE);
+    overlay->addText("BrushedTest 60HP", 14,
+                     Vec(mm2px(HP * HP_UNIT / 2), 14), WHITE, CLEAR, MANROPE);
     buffer->addChild(overlay);
     addChild(buffer);
   }

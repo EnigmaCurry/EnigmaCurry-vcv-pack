@@ -348,7 +348,7 @@ struct TransportWidget : ModuleWidget {
     {
       FramebufferWidget *buffer = new FramebufferWidget();
       DynamicOverlay *overlay = new DynamicOverlay(HP);
-      overlay->addText("Transport", 40, Vec(mm2px(HP * HP_UNIT / 2), 25), WHITE,
+      overlay->addText("Transport", 14, Vec(mm2px(HP * HP_UNIT / 2), 14), WHITE,
                        CLEAR, MANROPE);
       overlay->addText("LENGTH", 16, lenLoc.minus(Vec(-15, 22)), WHITE,
                        RED_TRANSPARENT);

@@ -95,7 +95,7 @@ struct LatchWidget : ModuleWidget {
     {
       FramebufferWidget *buffer = new FramebufferWidget();
       DynamicOverlay *overlay = new DynamicOverlay(HP);
-      overlay->addText("Latch", 20, Vec(mm2px(HP * HP_UNIT / 2), 25), WHITE,
+      overlay->addText("Latch", 14, Vec(mm2px(HP * HP_UNIT / 2), 14), WHITE,
                        CLEAR, MANROPE);
       overlay->addText("TRIG", 13, trig1Loc.minus(Vec(0, 20)), WHITE,
                        RED_TRANSPARENT);

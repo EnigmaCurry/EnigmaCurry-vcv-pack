@@ -242,7 +242,7 @@ struct EnigmaCurryMixer8Widget : ModuleWidget {
         // the letters.
         FramebufferWidget* buffer = new FramebufferWidget();
         DynamicOverlay* overlay = new DynamicOverlay(HP);
-        overlay->addText("Mixer8", 20, Vec(mm2px(HP * HP_UNIT / 2), 25),
+        overlay->addText("Mixer8", 14, Vec(mm2px(HP * HP_UNIT / 2), 14),
                          WHITE, CLEAR, MANROPE);
         for (int ch = 0; ch < 8; ++ch) {
             char label[4];

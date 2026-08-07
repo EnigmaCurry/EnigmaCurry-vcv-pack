@@ -121,9 +121,9 @@ struct NegativeHarmonyWidget : ModuleWidget {
     {
       FramebufferWidget *buffer = new FramebufferWidget();
       DynamicOverlay *overlay = new DynamicOverlay(HP);
-      overlay->addText("Negative", 18, Vec(mm2px(HP * HP_UNIT / 2), 13), WHITE,
+      overlay->addText("Negative", 14, Vec(mm2px(HP * HP_UNIT / 2), 14), WHITE,
                        CLEAR, MANROPE);
-      overlay->addText("Harmony", 18, Vec(mm2px(HP * HP_UNIT / 2), 25), WHITE,
+      overlay->addText("Harmony", 14, Vec(mm2px(HP * HP_UNIT / 2), 28), WHITE,
                        CLEAR, MANROPE);
       overlay->addText("AXIS", 13, axisInLoc.minus(Vec(0, 20)), WHITE,
                        RED_TRANSPARENT);

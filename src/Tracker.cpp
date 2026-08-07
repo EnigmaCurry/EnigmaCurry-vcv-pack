@@ -53,6 +53,9 @@ struct EnigmaCurryTracker : Module {
         OUT_BPM,   // 1V/oct around 120 BPM (Impromptu Clocked convention)
         OUT_BEAT,  // 10V, ~1ms trigger fired on rows where row % RPB == 0
         OUT_BAR,   // 10V, ~1ms trigger fired on rows where row % RPM == 0
+        OUT_STEP,  // 10V, ~1ms trigger fired on every row change (finest
+                   // musically-meaningful subdivision — matches Clocked's
+                   // default ×4 subdiv at RPB=4).
         NUM_OUTPUTS
     };
     enum LightIds  { NUM_LIGHTS };
@@ -85,9 +88,10 @@ struct EnigmaCurryTracker : Module {
     // bar boundary, so the downstream sequencer starts synced).
     int lastRow     = -1;
     int lastPattern = -1;
-    dsp::PulseGenerator beatPulse, barPulse;
+    dsp::PulseGenerator beatPulse, barPulse, stepPulse;
     // ~1ms — long enough for downstream triggers to catch, short enough
-    // not to smear back-to-back beat rows in fast tempos.
+    // not to smear back-to-back step rows in fast tempos (step fires
+    // every row, so at RPB=4 it's the fastest of the three triggers).
     static constexpr float TRIG_DUR = 1e-3f;
 
     EnigmaCurryTracker() {
@@ -99,6 +103,7 @@ struct EnigmaCurryTracker : Module {
         configOutput(OUT_BPM,  "BPM CV (1V/oct, ref=120)");
         configOutput(OUT_BEAT, "Beat trigger");
         configOutput(OUT_BAR,  "Bar trigger");
+        configOutput(OUT_STEP, "Step trigger");
     }
 
     // Called on UI thread (menu action or dataFromJson). Parses the file
@@ -191,11 +196,14 @@ struct EnigmaCurryTracker : Module {
                     ringFill--;
                 }
 
-                // Row-change → beat/bar triggers. Uses (row, pattern)
-                // rather than sample-time accumulation so jumps, loops,
-                // and tempo changes are honored automatically.
+                // Row-change → step / beat / bar triggers. Uses (row,
+                // pattern) rather than sample-time accumulation so jumps,
+                // loops, and tempo changes are honored automatically.
+                // Step fires unconditionally on every row (the composer's
+                // edit unit); beat and bar are RPB-/RPM-aligned subsets.
                 const int row = mod->get_current_row();
                 if (row != lastRow || pat != lastPattern) {
+                    stepPulse.trigger(TRIG_DUR);
                     if (row % rpb == 0) beatPulse.trigger(TRIG_DUR);
                     if (row % rpm == 0) barPulse.trigger(TRIG_DUR);
                     lastRow = row;
@@ -213,6 +221,8 @@ struct EnigmaCurryTracker : Module {
             beatPulse.process(args.sampleTime) ? 10.f : 0.f);
         outputs[OUT_BAR].setVoltage(
             barPulse.process(args.sampleTime) ? 10.f : 0.f);
+        outputs[OUT_STEP].setVoltage(
+            stepPulse.process(args.sampleTime) ? 10.f : 0.f);
     }
 
     json_t* dataToJson() override {
@@ -269,23 +279,31 @@ struct EnigmaCurryTrackerWidget : ModuleWidget {
         addOutput(createOutputCentered<PJ301MPort>(
             outRPos, module, EnigmaCurryTracker::OUT_R));
 
-        // Col 1 clock outputs: BPM CV + Beat + Bar triggers stacked below
-        // the L/R audio outs. Rows 4/6/8 give even spacing without
-        // crowding the L/R block above.
+        // Col 1 clock outputs: BPM CV + beat + bar + step triggers stacked
+        // below the L/R audio outs. Rows 4/5/7/9 keep even visual gaps
+        // (empty row 6 & 8) between adjacent ports without crowding the
+        // L/R block above.
         const Vec bpmPos  = at(4, 1);
-        const Vec beatPos = at(6, 1);
-        const Vec barPos  = at(8, 1);
+        const Vec barPos  = at(5, 1);
+        const Vec beatPos = at(7, 1);
+        const Vec stepPos = at(9, 1);
         addOutput(createOutputCentered<PJ301MPort>(
             bpmPos,  module, EnigmaCurryTracker::OUT_BPM));
         addOutput(createOutputCentered<PJ301MPort>(
+            barPos,  module, EnigmaCurryTracker::OUT_BAR));
+        addOutput(createOutputCentered<PJ301MPort>(
             beatPos, module, EnigmaCurryTracker::OUT_BEAT));
         addOutput(createOutputCentered<PJ301MPort>(
-            barPos,  module, EnigmaCurryTracker::OUT_BAR));
+            stepPos, module, EnigmaCurryTracker::OUT_STEP));
 
         // Static labels — module name + jack tags. Run tag on
         // black-transparent bg, Reset on red-transparent to signal the
         // trigger nature (matches Latch/Transport reset styling). Clock
         // triggers get the red-transparent bg for the same reason.
+        // Col-1 trigger labels are lowercase spelled-out words matching
+        // WebBridge's beat/bar/subdiv convention; they need a bigger x
+        // offset (-30 vs the -20 used for L/R/RUN/RST) to keep the
+        // rightmost pixel clear of the jack collar.
         FramebufferWidget* buffer = new FramebufferWidget();
         DynamicOverlay* overlay = new DynamicOverlay(HP);
         overlay->addText("Tracker", 18, Vec(mm2px(HP * HP_UNIT / 2), 25),
@@ -298,11 +316,13 @@ struct EnigmaCurryTrackerWidget : ModuleWidget {
                          WHITE, BLACK_TRANSPARENT);
         overlay->addText("R", 10, outRPos.plus(Vec(-20, 3)),
                          WHITE, BLACK_TRANSPARENT);
-        overlay->addText("BPM", 9, bpmPos.plus(Vec(-20, 3)),
+        overlay->addText("BPM",  9, bpmPos.plus(Vec(-30, 3)),
                          WHITE, BLACK_TRANSPARENT);
-        overlay->addText("BT",  9, beatPos.plus(Vec(-20, 3)),
+        overlay->addText("bar",  9, barPos.plus(Vec(-30, 3)),
                          WHITE, RED_TRANSPARENT);
-        overlay->addText("BR",  9, barPos.plus(Vec(-20, 3)),
+        overlay->addText("beat", 9, beatPos.plus(Vec(-30, 3)),
+                         WHITE, RED_TRANSPARENT);
+        overlay->addText("step", 9, stepPos.plus(Vec(-30, 3)),
                          WHITE, RED_TRANSPARENT);
         buffer->addChild(overlay);
         addChild(buffer);

@@ -21,12 +21,12 @@
  *   OUT BPM    — 1V/octave CV around 120 BPM; wire to a BPM CV input
  *   IN  BEAT   — beat trigger (1× the tempo)
  *   IN  BAR    — bar trigger (typically ÷4 of BEAT)
- *   IN  SUBDIV — subdivision trigger (typically ×2/×4/…)
+ *   IN  STEP — step trigger (finest musically-meaningful subdivision)
  *   IN  BPM    — 1V/octave CV; presence flips the JS UI into read-only mode
  *
  * The autopatch menu offers two turnkey wirings that fit best-effort with
  * their clock source's port layout: Clocked (level-sensitive master, BAR
- * ÷4, SUBDIV ×4) and Tracker (beat→BEAT, bar→BAR). Manual wiring works
+ * ÷4, STEP ×4) and Tracker (beat→BEAT, bar→BAR). Manual wiring works
  * too — the port semantics don't enforce either source.
  *
  * All state lives in the global `g_webbridge_state`. Two extern-C accessors
@@ -70,7 +70,7 @@ struct WebBridgeClockEvent {         // 16 bytes
 // positions are part of the shared ABI — do not reorder.
 static constexpr uint32_t WB_CONN_BIT_BEAT_IN   = 1u << 0;
 static constexpr uint32_t WB_CONN_BIT_BAR_IN    = 1u << 1;
-static constexpr uint32_t WB_CONN_BIT_SUBDIV_IN = 1u << 2;
+static constexpr uint32_t WB_CONN_BIT_STEP_IN = 1u << 2;
 // Bit 3 was CLK3 — retired when the fourth clock input was dropped.
 static constexpr uint32_t WB_CONN_MASK_INPUTS   = 0x07u;   // bits 0..2
 static constexpr uint32_t WB_CONN_BIT_RUN_OUT   = 1u << 4;
@@ -106,7 +106,7 @@ struct WebBridgeShared {
     uint32_t eventTail;              // 36  JS writes after drain
     WebBridgeClockEvent events[WEBBRIDGE_EVENT_CAPACITY];  // 40..4136
     // UI-thread-written ratio labels, one per trigger input (BEAT / BAR
-    // / SUBDIV, in that order). Empty when input is unconnected or the
+    // / STEP, in that order). Empty when input is unconnected or the
     // source module didn't declare a name we can format. Null-terminated
     // within the buffer.
     char clockRatioLabels[3][WB_RATIO_LABEL_BYTES];  // 4136..4184
@@ -177,12 +177,12 @@ WEBBRIDGE_EXPORT int   webbridge_shared_size(void) { return (int)sizeof(g_webbri
 // -------------------------------------------------------------------
 struct EnigmaCurryWebBridge : Module {
     enum ParamIds { NUM_PARAMS };
-    enum InputIds  { BEAT_IN, BAR_IN, SUBDIV_IN, BPM_IN, NUM_INPUTS };
+    enum InputIds  { BEAT_IN, BAR_IN, STEP_IN, BPM_IN, NUM_INPUTS };
     enum OutputIds { RUN_OUT, RESET_OUT, BPM_OUT, NUM_OUTPUTS };
     enum LightIds  { NUM_LIGHTS };
 
     // Hysteretic edge detectors per trigger input (>=8V high, <=2V low).
-    // Index 0=beat, 1=bar, 2=subdiv — same order as the InputIds enum.
+    // Index 0=beat, 1=bar, 2=step — same order as the InputIds enum.
     bool clockHigh[3] = {false, false, false};
     uint32_t lastSeenResetEpoch = 0;
     dsp::PulseGenerator resetPulse;
@@ -196,7 +196,7 @@ struct EnigmaCurryWebBridge : Module {
         config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
         configInput(BEAT_IN,   "Beat trigger");
         configInput(BAR_IN,    "Bar trigger");
-        configInput(SUBDIV_IN, "Subdivision trigger");
+        configInput(STEP_IN, "Step trigger");
         configInput(BPM_IN,    "BPM CV in (1V/oct, ref=120) — enables read-only mode");
         configOutput(RESET_OUT, "Reset trigger");
         configOutput(RUN_OUT,   "Run gate (±10V, level-sensitive)");
@@ -222,7 +222,7 @@ struct EnigmaCurryWebBridge : Module {
         uint32_t conn = 0;
         if (inputs[BEAT_IN].isConnected())    conn |= WB_CONN_BIT_BEAT_IN;
         if (inputs[BAR_IN].isConnected())     conn |= WB_CONN_BIT_BAR_IN;
-        if (inputs[SUBDIV_IN].isConnected())  conn |= WB_CONN_BIT_SUBDIV_IN;
+        if (inputs[STEP_IN].isConnected())  conn |= WB_CONN_BIT_STEP_IN;
         if (inputs[BPM_IN].isConnected())     conn |= WB_CONN_BIT_BPM_IN;
         if (outputs[RUN_OUT].isConnected())   conn |= WB_CONN_BIT_RUN_OUT;
         if (outputs[RESET_OUT].isConnected()) conn |= WB_CONN_BIT_RESET_OUT;
@@ -276,9 +276,9 @@ struct EnigmaCurryWebBridge : Module {
         const float bpmCv = (bpm > 1.f) ? std::log2(bpm / 120.f) : -6.f;
         outputs[BPM_OUT].setVoltage(bpmCv);
 
-        // ---- Audio → JS: rising edges on BEAT / BAR / SUBDIV ----------
+        // ---- Audio → JS: rising edges on BEAT / BAR / STEP ----------
         // Loop index i matches the InputIds enum ordering (0=beat, 1=bar,
-        // 2=subdiv) so the emitted `ev.clock` field acts as a stable
+        // 2=step) so the emitted `ev.clock` field acts as a stable
         // channel id for JS to demultiplex on.
         for (int i = 0; i < 3; ++i) {
             const float v = inputs[BEAT_IN + i].getVoltage();
@@ -319,49 +319,24 @@ struct EnigmaCurryWebBridge : Module {
 };
 
 // -------------------------------------------------------------------
-// Widget — 6HP. All ports live in the RIGHT column so they hug the
-// side facing Clocked when the autopatch places Clocked to our right.
-// The LEFT column carries the port labels aligned to each row.
+// Widget — 6HP. All ports live in the RIGHT column so short right-flush
+// autopatch cables reach a neighbour placed to our right. The LEFT
+// column carries the port labels aligned to each row.
 //
-// Vertical layout, top to bottom:
-//   rows 1..3         → RESET/RUN/BPM outputs, aligned with Clocked's
-//                       top input row
-//   BAR / SUBDIV      → placed at Clocked's sub-clock RATIO-knob Y
-//                       coordinates (see WB_BAR_Y_PX / WB_SUBDIV_Y_PX)
-//                       so each input port sits directly across from
-//                       the knob that shapes its ratio in the Clocked
-//                       autopatch scenario
-//   BEAT              → dropped to the bottom of the panel; the master
-//                       ×1 beat has no ratio knob to line up with
-//   BPM               → tucked below BEAT in the last of the panel's
-//                       vertical margin
+// Vertical layout, top to bottom (rows 1..7 of a 10-row grid, rows
+// 8..10 intentionally empty as headroom for future ports):
+//   row 1   RESET  (out)
+//   row 2   RUN    (out)
+//   row 3   BPM    (out)
+//   row 4   bpm    (in, tempo readback)
+//   row 5   beat
+//   row 6   bar
+//   row 7   step
 // -------------------------------------------------------------------
 #define WB_HP 6
 #define WB_ROWS 10
 #define WB_COLUMNS 2
 static panel_grid<WB_HP, WB_ROWS, WB_COLUMNS> webBridgeGrid;
-
-// Y positions (panel pixels) that match Clocked's three sub-clock
-// RATIO knobs: Clocked.cpp places them at row2 + i * rowSpacingClks
-// with row2 = 172 and rowSpacingClks = 50. Rack widget coordinates
-// are pixels already, so these are used raw in Vec(...).
-//
-// Nudge: we subtract WB_CLK_KNOB_NUDGE_PX from the raw Y so the port
-// jack's optical center matches the knob's optical center. Rogan-style
-// knobs (Clocked's IMBigKnob is Rogan1PSWhiteIM) render with a drop
-// shadow inside the widget bounds — the shadow adds visual mass below
-// the cap, so a mathematically-centered knob reads as sitting slightly
-// higher than a port at the same Y. Nudging the port up compensates.
-static constexpr float WB_CLK_KNOB_NUDGE_PX = 4.f;
-static constexpr float WB_BAR_Y_PX    = 172.f - WB_CLK_KNOB_NUDGE_PX;
-static constexpr float WB_SUBDIV_Y_PX = 222.f - WB_CLK_KNOB_NUDGE_PX;
-// BEAT sits below SUBDIV with roughly a full port's clearance. Panel is
-// 380 px tall (128.5 mm × 75/25.4), so 322 leaves ~58 px of margin.
-static constexpr float WB_BEAT_Y_PX   = 322.f;
-// BPM_IN tucks into the leftover margin at the panel bottom. Distinct
-// from BPM_OUT (row 3, top cluster) — this port switches the JS UI
-// into read-only mode when cabled.
-static constexpr float WB_BPM_IN_Y_PX = 360.f;
 
 // -------------------------------------------------------------------
 // Autopatch: spawn a Clocked module beside this WebBridge, wire it up,
@@ -558,7 +533,7 @@ struct EnigmaCurryWebBridgeWidget : ModuleWidget {
                 findInput (clockedWidget, clocked_ids::BPM_INPUT));
         // Clocked CLK_OUTPUTS[0] (master ×1) → WebBridge BEAT_IN.
         // Clocked CLK_OUTPUTS[1] (÷4 default) → WebBridge BAR_IN.
-        // Clocked CLK_OUTPUTS[2] (×4 default) → WebBridge SUBDIV_IN.
+        // Clocked CLK_OUTPUTS[2] (×4 default) → WebBridge STEP_IN.
         // Clocked CLK_OUTPUTS[3] has no matching input anymore — the
         // fourth trigger input was retired.
         connect(findOutput(clockedWidget, clocked_ids::CLK_OUTPUT_0 + 0),
@@ -566,7 +541,7 @@ struct EnigmaCurryWebBridgeWidget : ModuleWidget {
         connect(findOutput(clockedWidget, clocked_ids::CLK_OUTPUT_0 + 1),
                 findInput (this, EnigmaCurryWebBridge::BAR_IN));
         connect(findOutput(clockedWidget, clocked_ids::CLK_OUTPUT_0 + 2),
-                findInput (this, EnigmaCurryWebBridge::SUBDIV_IN));
+                findInput (this, EnigmaCurryWebBridge::STEP_IN));
 
         // 6. History: single ModuleAdd. Cascading cables get cleaned up
         //    by Rack when the module is removed on undo.
@@ -683,6 +658,7 @@ struct EnigmaCurryWebBridgeWidget : ModuleWidget {
     //     WB.RESET_OUT → Tracker.RESET_IN
     //     Tracker.OUT_BEAT → WB.BEAT_IN
     //     Tracker.OUT_BAR  → WB.BAR_IN
+    //     Tracker.OUT_STEP → WB.STEP_IN
     //     Tracker.OUT_BPM  → WB.BPM_IN
     // BPM_OUT is intentionally left unwired: Tracker's tempo comes from
     // the loaded module file, and the BPM_IN cable is what tells the JS
@@ -741,6 +717,7 @@ struct EnigmaCurryWebBridgeWidget : ModuleWidget {
         constexpr int TRACKER_OUT_BPM  = 2;   //                     ::OUT_BPM
         constexpr int TRACKER_OUT_BEAT = 3;   //                     ::OUT_BEAT
         constexpr int TRACKER_OUT_BAR  = 4;   //                     ::OUT_BAR
+        constexpr int TRACKER_OUT_STEP = 5;   //                     ::OUT_STEP
 
         connect(findOutput(this, EnigmaCurryWebBridge::RUN_OUT),
                 findInput (trackerWidget, TRACKER_RUN_IN));
@@ -750,6 +727,8 @@ struct EnigmaCurryWebBridgeWidget : ModuleWidget {
                 findInput (this, EnigmaCurryWebBridge::BEAT_IN));
         connect(findOutput(trackerWidget, TRACKER_OUT_BAR),
                 findInput (this, EnigmaCurryWebBridge::BAR_IN));
+        connect(findOutput(trackerWidget, TRACKER_OUT_STEP),
+                findInput (this, EnigmaCurryWebBridge::STEP_IN));
         connect(findOutput(trackerWidget, TRACKER_OUT_BPM),
                 findInput (this, EnigmaCurryWebBridge::BPM_IN));
 
@@ -765,7 +744,7 @@ struct EnigmaCurryWebBridgeWidget : ModuleWidget {
         menu->addChild(createMenuItem(
             clockedPatched
                 ? "Auto-patch Clocked (already connected)"
-                : "Auto-patch Clocked (BAR ÷4, SUBDIV ×4)",
+                : "Auto-patch Clocked (BAR ÷4, STEP ×4)",
             "",
             [this]() { autopatchClocked(); },
             /* disabled */ clockedPatched
@@ -774,7 +753,7 @@ struct EnigmaCurryWebBridgeWidget : ModuleWidget {
         menu->addChild(createMenuItem(
             trackerPatched
                 ? "Auto-patch Tracker (already connected)"
-                : "Auto-patch Tracker (beat → BEAT, bar → BAR)",
+                : "Auto-patch Tracker (beat/bar/step → BEAT/BAR/STEP)",
             "",
             [this]() { autopatchTracker(); },
             /* disabled */ trackerPatched
@@ -849,7 +828,7 @@ struct EnigmaCurryWebBridgeWidget : ModuleWidget {
         for (int i = 0; i < 3; ++i) {
             // Find the PortWidget for this input port id (getInputs()
             // isn't ordered by portId, so scan for a match). Index 0=beat,
-            // 1=bar, 2=subdiv — matches the InputIds enum.
+            // 1=bar, 2=step — matches the InputIds enum.
             PortWidget* myPort = nullptr;
             for (PortWidget* p : getInputs()) {
                 if (p->portId == EnigmaCurryWebBridge::BEAT_IN + i) {
@@ -907,10 +886,11 @@ struct EnigmaCurryWebBridgeWidget : ModuleWidget {
             // Render Clocked-style ratio glyphs for Tracker's clock outs
             // so the two clock sources produce visually consistent labels.
             // Tracker's port IDs come from EnigmaCurryTracker's OutputIds
-            // enum: OUT_L=0, OUT_R=1, OUT_BPM=2, OUT_BEAT=3, OUT_BAR=4.
-            // Values are locked to the RPB=4 / RPM=16 assumption Tracker
-            // currently ships (see the comment in Tracker.cpp explaining
-            // why per-pattern meter isn't wired up yet).
+            // enum: OUT_L=0, OUT_R=1, OUT_BPM=2, OUT_BEAT=3, OUT_BAR=4,
+            // OUT_STEP=5. Values are locked to the RPB=4 / RPM=16
+            // assumption Tracker currently ships (see the comment in
+            // Tracker.cpp explaining why per-pattern meter isn't wired
+            // up yet).
             if (trackerModel && src->module->model == trackerModel) {
                 if (srcId == 3) {           // OUT_BEAT
                     writeLabel(i, "\xc3\x97" "1");   // "×1"
@@ -919,6 +899,8 @@ struct EnigmaCurryWebBridgeWidget : ModuleWidget {
                     // A bar-per-4-beats pulse implies bar length 4 —
                     // matches Clocked's "BAR_IN ÷N sets beatsPerBar" idea.
                     if (i == 1) derivedBpb = 4;
+                } else if (srcId == 5) {    // OUT_STEP
+                    writeLabel(i, "\xc3\x97" "4");   // "×4" (rows/beat)
                 }
                 continue;
             }
@@ -943,19 +925,12 @@ struct EnigmaCurryWebBridgeWidget : ModuleWidget {
         setModule(module);
         setPanel(new BrushedMetalPanel(WB_HP));
 
-        // All ports in col 1 (right edge). RESET/RUN/BPM outputs stay
-        // on grid rows 1..3 so they mirror Clocked's top-left cluster
-        // and the autopatch cables run straight across. BAR / SUBDIV
-        // bail out of the grid to hit Clocked's RATIO-knob Y positions
-        // exactly; BEAT sits at the bottom of the trigger cluster; BPM
-        // (input) tucks into the last of the panel margin below.
-        //
-        // Port X and label X come from the same 2-col split the grid
-        // uses (col 1 = 3/4 across, col 0 = 1/4 across), so every row's
-        // ports and labels stay in the same columns.
-        const float portX  = mm2px(0.75f * WB_HP * HP_UNIT);
-        const float labelX = mm2px(0.25f * WB_HP * HP_UNIT);
-
+        // Everything's on the grid — ports in col 1, labels in col 0,
+        // rows 1..7. Label bg colour signals direction:
+        //   outputs → black-transparent bg
+        //   inputs  → red-transparent bg
+        // The two BPM ports carry _out / _in suffixes to disambiguate
+        // beyond the colour alone.
         addOutput(createOutputCentered<PJ301MPort>(
             webBridgeGrid.loc(1, 1), module, EnigmaCurryWebBridge::RESET_OUT));
         addOutput(createOutputCentered<PJ301MPort>(
@@ -963,36 +938,31 @@ struct EnigmaCurryWebBridgeWidget : ModuleWidget {
         addOutput(createOutputCentered<PJ301MPort>(
             webBridgeGrid.loc(3, 1), module, EnigmaCurryWebBridge::BPM_OUT));
         addInput(createInputCentered<PJ301MPort>(
-            Vec(portX, WB_BAR_Y_PX), module, EnigmaCurryWebBridge::BAR_IN));
+            webBridgeGrid.loc(4, 1), module, EnigmaCurryWebBridge::BPM_IN));
         addInput(createInputCentered<PJ301MPort>(
-            Vec(portX, WB_SUBDIV_Y_PX), module, EnigmaCurryWebBridge::SUBDIV_IN));
+            webBridgeGrid.loc(5, 1), module, EnigmaCurryWebBridge::BEAT_IN));
         addInput(createInputCentered<PJ301MPort>(
-            Vec(portX, WB_BEAT_Y_PX), module, EnigmaCurryWebBridge::BEAT_IN));
+            webBridgeGrid.loc(6, 1), module, EnigmaCurryWebBridge::BAR_IN));
         addInput(createInputCentered<PJ301MPort>(
-            Vec(portX, WB_BPM_IN_Y_PX), module, EnigmaCurryWebBridge::BPM_IN));
+            webBridgeGrid.loc(7, 1), module, EnigmaCurryWebBridge::STEP_IN));
 
-        // Labels sit in col 0 on the same row as each port. Output labels
-        // use the output-black background convention; input labels use
-        // the input-red one, matching the rest of the pack.
         FramebufferWidget* buffer = new FramebufferWidget();
         DynamicOverlay* overlay = new DynamicOverlay(WB_HP);
         overlay->addText("WebBridge", 14, Vec(mm2px(WB_HP * HP_UNIT / 2), 14),
                          WHITE, CLEAR, MANROPE);
-        overlay->addText("RESET", 10, webBridgeGrid.loc(1, 0),
+        overlay->addText("reset",  10, webBridgeGrid.loc(1, 0),
                          WHITE, BLACK_TRANSPARENT);
-        overlay->addText("RUN",   10, webBridgeGrid.loc(2, 0),
+        overlay->addText("run",    10, webBridgeGrid.loc(2, 0),
                          WHITE, BLACK_TRANSPARENT);
-        overlay->addText("BPM",   10, webBridgeGrid.loc(3, 0),
+        overlay->addText("bpm_out", 10, webBridgeGrid.loc(3, 0),
                          WHITE, BLACK_TRANSPARENT);
-        overlay->addText("bar",    10, Vec(labelX, WB_BAR_Y_PX),
+        overlay->addText("bpm_in",  10, webBridgeGrid.loc(4, 0),
                          WHITE, RED_TRANSPARENT);
-        overlay->addText("subdiv", 10, Vec(labelX, WB_SUBDIV_Y_PX),
+        overlay->addText("beat",   10, webBridgeGrid.loc(5, 0),
                          WHITE, RED_TRANSPARENT);
-        overlay->addText("beat",   10, Vec(labelX, WB_BEAT_Y_PX),
+        overlay->addText("bar",    10, webBridgeGrid.loc(6, 0),
                          WHITE, RED_TRANSPARENT);
-        // BPM_IN uses the red-transparent input bg so it visually pairs
-        // with the trigger inputs rather than the top-cluster BPM output.
-        overlay->addText("BPM",    10, Vec(labelX, WB_BPM_IN_Y_PX),
+        overlay->addText("step", 10, webBridgeGrid.loc(7, 0),
                          WHITE, RED_TRANSPARENT);
         buffer->addChild(overlay);
         addChild(buffer);

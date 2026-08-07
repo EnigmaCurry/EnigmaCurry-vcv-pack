@@ -84,6 +84,15 @@ static constexpr uint32_t WB_CONN_MASK_OUTPUTS  = 0x70u;   // bits 4..6
 // switches the JS UI's BPM widget from JS-controlled to read-only mode.
 static constexpr uint32_t WB_CONN_BIT_BPM_IN    = 1u << 7;
 
+// Fixed cable colours for the three trigger inputs. Kept deterministic
+// (not from Rack's cycling default palette) so autopatch always draws
+// them in the same hues, and the JS-side LED pulse colours in /dev use
+// the same values so cable ↔ LED reads unambiguously. If you change
+// one place, change the matching CSS in web/dev-helper.js.
+static const NVGcolor WB_CABLE_BEAT = nvgRGB(0x4a, 0xde, 0x80);   // green
+static const NVGcolor WB_CABLE_BAR  = nvgRGB(0x9d, 0xd8, 0xff);   // light blue
+static const NVGcolor WB_CABLE_STEP = nvgRGB(0xa7, 0x8b, 0xfa);   // purple
+
 // Ratio-label buffer: per-input UTF-8 string reported by the
 // upstream module's ParamQuantity::getDisplayValueString() (or "×1"
 // for the Clocked master). 16 bytes accommodates typical ratio
@@ -513,10 +522,11 @@ struct EnigmaCurryWebBridgeWidget : ModuleWidget {
             for (PortWidget* p : mw->getOutputs()) if (p->portId == portId) return p;
             return nullptr;
         };
-        auto connect = [](PortWidget* outPort, PortWidget* inPort) -> CableWidget* {
+        auto connect = [](PortWidget* outPort, PortWidget* inPort,
+                          NVGcolor color) -> CableWidget* {
             if (!outPort || !inPort) return nullptr;
             CableWidget* cw = new CableWidget();
-            cw->color = APP->scene->rack->getNextCableColor();
+            cw->color = color;
             cw->outputPort = outPort;
             cw->inputPort  = inPort;
             cw->updateCable();
@@ -524,24 +534,33 @@ struct EnigmaCurryWebBridgeWidget : ModuleWidget {
             return cw;
         };
 
-        // WebBridge outputs → Clocked inputs.
+        // WebBridge outputs → Clocked inputs. RUN / RESET / BPM take
+        // colours from Rack's cycling palette; beat / bar / step use the
+        // fixed WB_CABLE_* colours so they always visually match the
+        // LED pulses in the /dev UI.
         connect(findOutput(this, EnigmaCurryWebBridge::RUN_OUT),
-                findInput (clockedWidget, clocked_ids::RUN_INPUT));
+                findInput (clockedWidget, clocked_ids::RUN_INPUT),
+                APP->scene->rack->getNextCableColor());
         connect(findOutput(this, EnigmaCurryWebBridge::RESET_OUT),
-                findInput (clockedWidget, clocked_ids::RESET_INPUT));
+                findInput (clockedWidget, clocked_ids::RESET_INPUT),
+                APP->scene->rack->getNextCableColor());
         connect(findOutput(this, EnigmaCurryWebBridge::BPM_OUT),
-                findInput (clockedWidget, clocked_ids::BPM_INPUT));
+                findInput (clockedWidget, clocked_ids::BPM_INPUT),
+                APP->scene->rack->getNextCableColor());
         // Clocked CLK_OUTPUTS[0] (master ×1) → WebBridge BEAT_IN.
         // Clocked CLK_OUTPUTS[1] (÷4 default) → WebBridge BAR_IN.
         // Clocked CLK_OUTPUTS[2] (×4 default) → WebBridge STEP_IN.
         // Clocked CLK_OUTPUTS[3] has no matching input anymore — the
         // fourth trigger input was retired.
         connect(findOutput(clockedWidget, clocked_ids::CLK_OUTPUT_0 + 0),
-                findInput (this, EnigmaCurryWebBridge::BEAT_IN));
+                findInput (this, EnigmaCurryWebBridge::BEAT_IN),
+                WB_CABLE_BEAT);
         connect(findOutput(clockedWidget, clocked_ids::CLK_OUTPUT_0 + 1),
-                findInput (this, EnigmaCurryWebBridge::BAR_IN));
+                findInput (this, EnigmaCurryWebBridge::BAR_IN),
+                WB_CABLE_BAR);
         connect(findOutput(clockedWidget, clocked_ids::CLK_OUTPUT_0 + 2),
-                findInput (this, EnigmaCurryWebBridge::STEP_IN));
+                findInput (this, EnigmaCurryWebBridge::STEP_IN),
+                WB_CABLE_STEP);
 
         // 6. History: single ModuleAdd. Cascading cables get cleaned up
         //    by Rack when the module is removed on undo.
@@ -700,10 +719,11 @@ struct EnigmaCurryWebBridgeWidget : ModuleWidget {
             for (PortWidget* p : mw->getOutputs()) if (p->portId == portId) return p;
             return nullptr;
         };
-        auto connect = [](PortWidget* outPort, PortWidget* inPort) {
+        auto connect = [](PortWidget* outPort, PortWidget* inPort,
+                          NVGcolor color) {
             if (!outPort || !inPort) return;
             CableWidget* cw = new CableWidget();
-            cw->color = APP->scene->rack->getNextCableColor();
+            cw->color = color;
             cw->outputPort = outPort;
             cw->inputPort  = inPort;
             cw->updateCable();
@@ -719,18 +739,27 @@ struct EnigmaCurryWebBridgeWidget : ModuleWidget {
         constexpr int TRACKER_OUT_BAR  = 4;   //                     ::OUT_BAR
         constexpr int TRACKER_OUT_STEP = 5;   //                     ::OUT_STEP
 
+        // RUN / RESET / BPM take colours from Rack's cycling palette;
+        // beat / bar / step use the fixed WB_CABLE_* colours so they
+        // always visually match the LED pulses in the /dev UI.
         connect(findOutput(this, EnigmaCurryWebBridge::RUN_OUT),
-                findInput (trackerWidget, TRACKER_RUN_IN));
+                findInput (trackerWidget, TRACKER_RUN_IN),
+                APP->scene->rack->getNextCableColor());
         connect(findOutput(this, EnigmaCurryWebBridge::RESET_OUT),
-                findInput (trackerWidget, TRACKER_RESET_IN));
+                findInput (trackerWidget, TRACKER_RESET_IN),
+                APP->scene->rack->getNextCableColor());
         connect(findOutput(trackerWidget, TRACKER_OUT_BEAT),
-                findInput (this, EnigmaCurryWebBridge::BEAT_IN));
+                findInput (this, EnigmaCurryWebBridge::BEAT_IN),
+                WB_CABLE_BEAT);
         connect(findOutput(trackerWidget, TRACKER_OUT_BAR),
-                findInput (this, EnigmaCurryWebBridge::BAR_IN));
+                findInput (this, EnigmaCurryWebBridge::BAR_IN),
+                WB_CABLE_BAR);
         connect(findOutput(trackerWidget, TRACKER_OUT_STEP),
-                findInput (this, EnigmaCurryWebBridge::STEP_IN));
+                findInput (this, EnigmaCurryWebBridge::STEP_IN),
+                WB_CABLE_STEP);
         connect(findOutput(trackerWidget, TRACKER_OUT_BPM),
-                findInput (this, EnigmaCurryWebBridge::BPM_IN));
+                findInput (this, EnigmaCurryWebBridge::BPM_IN),
+                APP->scene->rack->getNextCableColor());
 
         history::ModuleAdd* h = new history::ModuleAdd;
         h->name = "auto-patch Tracker to WebBridge";

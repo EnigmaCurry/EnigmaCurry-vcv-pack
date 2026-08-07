@@ -56,6 +56,11 @@ struct EnigmaCurryTracker : Module {
         OUT_STEP,  // 10V, ~1ms trigger fired on every row change (finest
                    // musically-meaningful subdivision — matches Clocked's
                    // default ×4 subdiv at RPB=4).
+        OUT_PATTERN,   // Current pattern index as CV: 0.1V per pattern
+                       // (index 0 → 0V, index 100 → 10V). Downstream reads
+                       // it back with round(V·10). MPTM patterns fit in
+                       // that range with headroom; the resolution is more
+                       // than the DAC will honour anyway.
         NUM_OUTPUTS
     };
     enum LightIds  { NUM_LIGHTS };
@@ -104,6 +109,7 @@ struct EnigmaCurryTracker : Module {
         configOutput(OUT_BEAT, "Beat trigger");
         configOutput(OUT_BAR,  "Bar trigger");
         configOutput(OUT_STEP, "Step trigger");
+        configOutput(OUT_PATTERN, "Pattern index CV (0.1V per pattern)");
     }
 
     // Called on UI thread (menu action or dataFromJson). Parses the file
@@ -143,6 +149,7 @@ struct EnigmaCurryTracker : Module {
         std::unique_lock<std::mutex> lock(modMutex, std::try_to_lock);
         float L = 0.f, R = 0.f;
         float bpmCv = 0.f;   // 0V default = 120 BPM
+        float patternCv = 0.f;   // 0V default = pattern index 0
 
         if (lock.owns_lock() && mod) {
             if (resetEdge) {
@@ -152,6 +159,12 @@ struct EnigmaCurryTracker : Module {
             }
 
             const int pat = mod->get_current_pattern();
+            // Pattern index CV — same "emit continuously so downstream
+            // sees the current value even while paused" contract as BPM.
+            // 0.1V per unit gives a lossless round-trip for indices up to
+            // 100 (MPTM's practical max sits well below that); the receiver
+            // does round(V·10) to reconstruct.
+            if (pat >= 0) patternCv = (float)pat * 0.1f;
             // Per-pattern rows-per-beat / rows-per-measure would come from
             // openmpt::module::get_pattern_rows_per_beat() / _per_measure()
             // (0.8.x API). This build vendors 0.7.9 (Emscripten 3.1.27 in
@@ -215,6 +228,7 @@ struct EnigmaCurryTracker : Module {
         outputs[OUT_L].setVoltage(L);
         outputs[OUT_R].setVoltage(R);
         outputs[OUT_BPM].setVoltage(bpmCv);
+        outputs[OUT_PATTERN].setVoltage(patternCv);
         // Pulse generators are audio-thread-only, safe to process outside
         // the mutex.
         outputs[OUT_BEAT].setVoltage(
@@ -271,13 +285,14 @@ struct EnigmaCurryTrackerWidget : ModuleWidget {
         // rows land at identical Y coordinates. When WebBridge autopatches
         // Tracker to its right, cables run straight across.
         //
-        //   row 1  reset  ← WB.reset_out
-        //   row 2  run    ← WB.run_out
+        //   row 1  reset    ← WB.reset_out
+        //   row 2  run      ← WB.run_out
         //   row 3  (empty — WB has bpm_out here, no Tracker analogue)
-        //   row 4  bpm    → WB.bpm_in
-        //   row 5  beat   → WB.beat_in
-        //   row 6  bar    → WB.bar_in
-        //   row 7  step   → WB.step_in
+        //   row 4  bpm      → WB.bpm_in
+        //   row 5  beat     → WB.beat_in
+        //   row 6  bar      → WB.bar_in
+        //   row 7  step     → WB.step_in
+        //   row 8  pattern  → WB.pattern_in
         addInput(createInputCentered<PJ301MPort>(
             at(1, 0), module, EnigmaCurryTracker::RESET_IN));
         addInput(createInputCentered<PJ301MPort>(
@@ -290,6 +305,8 @@ struct EnigmaCurryTrackerWidget : ModuleWidget {
             at(6, 0), module, EnigmaCurryTracker::OUT_BAR));
         addOutput(createOutputCentered<PJ301MPort>(
             at(7, 0), module, EnigmaCurryTracker::OUT_STEP));
+        addOutput(createOutputCentered<PJ301MPort>(
+            at(8, 0), module, EnigmaCurryTracker::OUT_PATTERN));
 
         // Col 1 (RIGHT column): stereo master out, y-pinned to align with
         // HostAudio2's Left/M and Right jack CENTERS. HostAudio uses
@@ -329,6 +346,8 @@ struct EnigmaCurryTrackerWidget : ModuleWidget {
         overlay->addText("bar",   10, at(6, 0).plus(Vec(-30, 0)),
                          WHITE, BLACK_TRANSPARENT);
         overlay->addText("step",  10, at(7, 0).plus(Vec(-30, 0)),
+                         WHITE, BLACK_TRANSPARENT);
+        overlay->addText("pat",   10, at(8, 0).plus(Vec(-30, 0)),
                          WHITE, BLACK_TRANSPARENT);
         overlay->addText("L", 10, outLPos.plus(Vec(-20, 0)),
                          WHITE, BLACK_TRANSPARENT);

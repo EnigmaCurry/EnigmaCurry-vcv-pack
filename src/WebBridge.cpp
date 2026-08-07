@@ -23,6 +23,8 @@
  *   IN  BAR    — bar trigger (typically ÷4 of BEAT)
  *   IN  STEP — step trigger (finest musically-meaningful subdivision)
  *   IN  BPM    — 1V/octave CV; presence flips the JS UI into read-only mode
+ *   IN  PATTERN — Tracker pattern index CV (0.1V/unit); presence switches
+ *                 the JS UI's bar.beat display to pattern.step
  *
  * The autopatch menu offers two turnkey wirings that fit best-effort with
  * their clock source's port layout: Clocked (level-sensitive master, BAR
@@ -83,6 +85,11 @@ static constexpr uint32_t WB_CONN_MASK_OUTPUTS  = 0x70u;   // bits 4..6
 // republishes to JS via bpmReadback. Presence of this bit is what
 // switches the JS UI's BPM widget from JS-controlled to read-only mode.
 static constexpr uint32_t WB_CONN_BIT_BPM_IN    = 1u << 7;
+// PATTERN_IN carries a Tracker's current-pattern index as CV (0.1V per
+// unit — see EnigmaCurryTracker::OUT_PATTERN). When cabled, the audio
+// thread round-trips it back to an integer and republishes to JS via
+// `currentPattern`, and JS switches its bar.beat readout to pattern.step.
+static constexpr uint32_t WB_CONN_BIT_PATTERN_IN = 1u << 8;
 
 // Fixed cable colours for the three trigger inputs. Kept deterministic
 // (not from Rack's cycling default palette) so autopatch always draws
@@ -138,6 +145,15 @@ struct WebBridgeShared {
     // JS uses the WB_CONN_BIT_BPM_IN bit to know whether this field is
     // meaningful, so no in-band sentinel needed.
     float    bpmReadback;            // 4200
+    // Audio → JS pattern readback. `currentPattern` mirrors the Tracker's
+    // integer pattern index (round-tripped through the 0.1V-per-unit CV
+    // on PATTERN_IN). `stepInPattern` is a 1-indexed counter of STEP_IN
+    // rising edges since the last pattern change — the "step" half of the
+    // dev UI's pattern.step cursor. Both are only meaningful when
+    // WB_CONN_BIT_PATTERN_IN is set; JS uses that bit as the mode switch
+    // between bar.beat (Clocked-driven) and pattern.step (Tracker-driven).
+    uint32_t currentPattern;         // 4204
+    uint32_t stepInPattern;          // 4208
 };
 
 static_assert(sizeof(WebBridgeClockEvent) == 16, "WebBridgeClockEvent layout drift");
@@ -156,6 +172,8 @@ static_assert(offsetof(WebBridgeShared, timeBeat)         == 4188, "layout: time
 static_assert(offsetof(WebBridgeShared, beatsPerBar)      == 4192, "layout: beatsPerBar");
 static_assert(offsetof(WebBridgeShared, runElapsedSeconds) == 4196, "layout: runElapsedSeconds");
 static_assert(offsetof(WebBridgeShared, bpmReadback)      == 4200, "layout: bpmReadback");
+static_assert(offsetof(WebBridgeShared, currentPattern)   == 4204, "layout: currentPattern");
+static_assert(offsetof(WebBridgeShared, stepInPattern)    == 4208, "layout: stepInPattern");
 
 alignas(16) WebBridgeShared g_webbridge_state = {
     /* currentFrame      */ 0,
@@ -174,6 +192,8 @@ alignas(16) WebBridgeShared g_webbridge_state = {
     /* beatsPerBar       */ 4,
     /* runElapsedSeconds */ 0.0f,
     /* bpmReadback       */ 0.0f,
+    /* currentPattern    */ 0,
+    /* stepInPattern     */ 0,
 };
 
 extern "C" {
@@ -186,7 +206,7 @@ WEBBRIDGE_EXPORT int   webbridge_shared_size(void) { return (int)sizeof(g_webbri
 // -------------------------------------------------------------------
 struct EnigmaCurryWebBridge : Module {
     enum ParamIds { NUM_PARAMS };
-    enum InputIds  { BEAT_IN, BAR_IN, STEP_IN, BPM_IN, NUM_INPUTS };
+    enum InputIds  { BEAT_IN, BAR_IN, STEP_IN, BPM_IN, PATTERN_IN, NUM_INPUTS };
     enum OutputIds { RUN_OUT, RESET_OUT, BPM_OUT, NUM_OUTPUTS };
     enum LightIds  { NUM_LIGHTS };
 
@@ -200,6 +220,13 @@ struct EnigmaCurryWebBridge : Module {
     // gate the first increment on this flag so the initial pulse just
     // marks presence rather than advancing the counter.
     bool firstBeatSeen = false;
+    // Pattern tracking (Tracker-driven mode). lastPattern seeds at UINT32_MAX
+    // so the very first sample after cable connect registers as a "pattern
+    // change" and snaps stepInPattern to 1 on the next STEP_IN edge. The
+    // same firstStepSeen flag as firstBeatSeen makes the first step land
+    // at 1 rather than skipping to 2.
+    uint32_t lastPattern = 0xffffffffu;
+    bool firstStepSeen = false;
 
     EnigmaCurryWebBridge() {
         config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -207,6 +234,7 @@ struct EnigmaCurryWebBridge : Module {
         configInput(BAR_IN,    "Bar trigger");
         configInput(STEP_IN, "Step trigger");
         configInput(BPM_IN,    "BPM CV in (1V/oct, ref=120) — enables read-only mode");
+        configInput(PATTERN_IN, "Pattern index CV (0.1V per unit) — switches display to pattern.step");
         configOutput(RESET_OUT, "Reset trigger");
         configOutput(RUN_OUT,   "Run gate (±10V, level-sensitive)");
         configOutput(BPM_OUT,   "BPM CV (1V/oct, ref=120)");
@@ -233,6 +261,7 @@ struct EnigmaCurryWebBridge : Module {
         if (inputs[BAR_IN].isConnected())     conn |= WB_CONN_BIT_BAR_IN;
         if (inputs[STEP_IN].isConnected())  conn |= WB_CONN_BIT_STEP_IN;
         if (inputs[BPM_IN].isConnected())     conn |= WB_CONN_BIT_BPM_IN;
+        if (inputs[PATTERN_IN].isConnected()) conn |= WB_CONN_BIT_PATTERN_IN;
         if (outputs[RUN_OUT].isConnected())   conn |= WB_CONN_BIT_RUN_OUT;
         if (outputs[RESET_OUT].isConnected()) conn |= WB_CONN_BIT_RESET_OUT;
         if (outputs[BPM_OUT].isConnected())   conn |= WB_CONN_BIT_BPM_OUT;
@@ -247,6 +276,23 @@ struct EnigmaCurryWebBridge : Module {
         if (inputs[BPM_IN].isConnected()) {
             const float bpmCv = inputs[BPM_IN].getVoltage();
             g_webbridge_state.bpmReadback = 120.f * std::exp2(bpmCv);
+        }
+
+        // ---- PATTERN_IN → JS readback ---------------------------------
+        // Tracker's OUT_PATTERN emits 0.1V per pattern index; round back
+        // to an integer. Clamped to 0 to defend against negative CV from
+        // a mis-cabled bipolar source. A pattern change resets the step
+        // cursor so the "pattern.step" display snaps to the new pattern.
+        if (inputs[PATTERN_IN].isConnected()) {
+            const float v = inputs[PATTERN_IN].getVoltage();
+            uint32_t pat = (v <= 0.f) ? 0u
+                                     : (uint32_t)std::lround(v * 10.f);
+            if (pat != lastPattern) {
+                lastPattern = pat;
+                g_webbridge_state.currentPattern = pat;
+                g_webbridge_state.stepInPattern = 1;
+                firstStepSeen = false;
+            }
         }
 
         // ---- JS → audio: RUN ------------------------------------------
@@ -275,7 +321,12 @@ struct EnigmaCurryWebBridge : Module {
             g_webbridge_state.timeBar  = 1;
             g_webbridge_state.timeBeat = 1;
             g_webbridge_state.runElapsedSeconds = 0.f;
+            g_webbridge_state.stepInPattern = 1;
             firstBeatSeen = false;
+            firstStepSeen = false;
+            // lastPattern stays as-is; the next PATTERN_IN sample after
+            // Tracker seeks back to pattern 0 will trip the pattern-change
+            // branch above and re-sync currentPattern/stepInPattern.
         }
         const bool resetHigh = resetPulse.process(args.sampleTime);
         outputs[RESET_OUT].setVoltage(resetHigh ? 10.f : 0.f);
@@ -320,6 +371,21 @@ struct EnigmaCurryWebBridge : Module {
                         }
                     }
                 }
+                // STEP_IN drives the step-within-pattern cursor. Only
+                // meaningful when PATTERN_IN is cabled — otherwise
+                // stepInPattern just free-runs, which JS ignores because
+                // the mode switch is gated on WB_CONN_BIT_PATTERN_IN.
+                // First step after a pattern change (or reset) holds the
+                // cursor at 1 so the display reads "step 1 of pattern N"
+                // instead of skipping straight to 2, mirroring the
+                // beat/bar semantics above.
+                if (i == 2 && inputs[PATTERN_IN].isConnected()) {
+                    if (!firstStepSeen) {
+                        firstStepSeen = true;
+                    } else {
+                        g_webbridge_state.stepInPattern += 1;
+                    }
+                }
             } else if (clockHigh[i] && v <= 2.f) {
                 clockHigh[i] = false;
             }
@@ -332,8 +398,8 @@ struct EnigmaCurryWebBridge : Module {
 // autopatch cables reach a neighbour placed to our right. The LEFT
 // column carries the port labels aligned to each row.
 //
-// Vertical layout, top to bottom (rows 1..7 of a 10-row grid, rows
-// 8..10 intentionally empty as headroom for future ports):
+// Vertical layout, top to bottom (rows 1..8 of a 10-row grid, rows
+// 9..10 intentionally empty as headroom for future ports):
 //   row 1   RESET  (out)
 //   row 2   RUN    (out)
 //   row 3   BPM    (out)
@@ -341,6 +407,7 @@ struct EnigmaCurryWebBridge : Module {
 //   row 5   beat
 //   row 6   bar
 //   row 7   step
+//   row 8   pattern (in, Tracker index — mirrors row 8 on Tracker's left col)
 // -------------------------------------------------------------------
 #define WB_HP 6
 #define WB_ROWS 10
@@ -679,9 +746,11 @@ struct EnigmaCurryWebBridgeWidget : ModuleWidget {
     //     Tracker.OUT_BAR  → WB.BAR_IN
     //     Tracker.OUT_STEP → WB.STEP_IN
     //     Tracker.OUT_BPM  → WB.BPM_IN
+    //     Tracker.OUT_PATTERN → WB.PATTERN_IN
     // BPM_OUT is intentionally left unwired: Tracker's tempo comes from
     // the loaded module file, and the BPM_IN cable is what tells the JS
-    // UI to flip the BPM widget into read-only mode.
+    // UI to flip the BPM widget into read-only mode. PATTERN_IN does the
+    // analogous mode switch on the bar.beat display (→ pattern.step).
     //
     // Placement policy mirrors autopatchClocked's: right-flush first
     // (WB.RUN/RESET_OUT sit on WebBridge's right edge → straight cables
@@ -738,6 +807,7 @@ struct EnigmaCurryWebBridgeWidget : ModuleWidget {
         constexpr int TRACKER_OUT_BEAT = 3;   //                     ::OUT_BEAT
         constexpr int TRACKER_OUT_BAR  = 4;   //                     ::OUT_BAR
         constexpr int TRACKER_OUT_STEP = 5;   //                     ::OUT_STEP
+        constexpr int TRACKER_OUT_PATTERN = 6; //                    ::OUT_PATTERN
 
         // RUN / RESET / BPM take colours from Rack's cycling palette;
         // beat / bar / step use the fixed WB_CABLE_* colours so they
@@ -759,6 +829,9 @@ struct EnigmaCurryWebBridgeWidget : ModuleWidget {
                 WB_CABLE_STEP);
         connect(findOutput(trackerWidget, TRACKER_OUT_BPM),
                 findInput (this, EnigmaCurryWebBridge::BPM_IN),
+                APP->scene->rack->getNextCableColor());
+        connect(findOutput(trackerWidget, TRACKER_OUT_PATTERN),
+                findInput (this, EnigmaCurryWebBridge::PATTERN_IN),
                 APP->scene->rack->getNextCableColor());
 
         history::ModuleAdd* h = new history::ModuleAdd;
@@ -974,6 +1047,8 @@ struct EnigmaCurryWebBridgeWidget : ModuleWidget {
             webBridgeGrid.loc(6, 1), module, EnigmaCurryWebBridge::BAR_IN));
         addInput(createInputCentered<PJ301MPort>(
             webBridgeGrid.loc(7, 1), module, EnigmaCurryWebBridge::STEP_IN));
+        addInput(createInputCentered<PJ301MPort>(
+            webBridgeGrid.loc(8, 1), module, EnigmaCurryWebBridge::PATTERN_IN));
 
         FramebufferWidget* buffer = new FramebufferWidget();
         DynamicOverlay* overlay = new DynamicOverlay(WB_HP);
@@ -992,6 +1067,8 @@ struct EnigmaCurryWebBridgeWidget : ModuleWidget {
         overlay->addText("bar",    10, webBridgeGrid.loc(6, 0),
                          WHITE, RED_TRANSPARENT);
         overlay->addText("step", 10, webBridgeGrid.loc(7, 0),
+                         WHITE, RED_TRANSPARENT);
+        overlay->addText("pat",  10, webBridgeGrid.loc(8, 0),
                          WHITE, RED_TRANSPARENT);
         buffer->addChild(overlay);
         addChild(buffer);

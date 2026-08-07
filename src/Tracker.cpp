@@ -251,26 +251,53 @@ struct EnigmaCurryTrackerWidget : ModuleWidget {
         setModule(module);
         setPanel(new BrushedMetalPanel(HP));
 
-        // Shift port matrix ~6px right so col-0 labels have room to the
-        // LEFT of their ports (matches Mixer8's convention).
+        // Shift the entire port matrix +15 px to the right (up from the
+        // original +6). Two goals fall out of this single shift because
+        // both columns move by the same amount:
+        //   * col 0 labels ("reset" / "step" etc.) get ~10 px of margin
+        //     from the panel's left edge instead of abutting it
+        //   * col 1 L/R jacks land 22.5 px from the panel's right edge,
+        //     mirroring HostAudio2's input jack distance from its own
+        //     left edge (Cardinal ModuleWidgets.hpp startX_In = 10.65 +
+        //     PJ301M half-width 11.85). Autopatched L→L / R→R cables
+        //     end up perfectly symmetrical across the two panels.
         auto at = [](int r, int c) {
-            return trackerGrid.loc(r, c).plus(Vec(6, 0));
+            return trackerGrid.loc(r, c).plus(Vec(15, 0));
         };
 
-        // Col 0: Run gate + Reset trigger. Placed low enough that the L/R
-        // outputs (pinned to HostAudio2 y-coords, ~85 and ~114 px, near
-        // the top) don't visually crowd them.
+        // Col 0 (LEFT column): every port that talks to WebBridge lives
+        // here, at the same row numbers WebBridge uses on its own right
+        // edge — the two modules share panel_grid<*, 10, *> so identical
+        // rows land at identical Y coordinates. When WebBridge autopatches
+        // Tracker to its right, cables run straight across.
+        //
+        //   row 1  reset  ← WB.reset_out
+        //   row 2  run    ← WB.run_out
+        //   row 3  (empty — WB has bpm_out here, no Tracker analogue)
+        //   row 4  bpm    → WB.bpm_in
+        //   row 5  beat   → WB.beat_in
+        //   row 6  bar    → WB.bar_in
+        //   row 7  step   → WB.step_in
         addInput(createInputCentered<PJ301MPort>(
-            at(3, 0), module, EnigmaCurryTracker::RUN_IN));
+            at(1, 0), module, EnigmaCurryTracker::RESET_IN));
         addInput(createInputCentered<PJ301MPort>(
-            at(5, 0), module, EnigmaCurryTracker::RESET_IN));
+            at(2, 0), module, EnigmaCurryTracker::RUN_IN));
+        addOutput(createOutputCentered<PJ301MPort>(
+            at(4, 0), module, EnigmaCurryTracker::OUT_BPM));
+        addOutput(createOutputCentered<PJ301MPort>(
+            at(5, 0), module, EnigmaCurryTracker::OUT_BEAT));
+        addOutput(createOutputCentered<PJ301MPort>(
+            at(6, 0), module, EnigmaCurryTracker::OUT_BAR));
+        addOutput(createOutputCentered<PJ301MPort>(
+            at(7, 0), module, EnigmaCurryTracker::OUT_STEP));
 
-        // Col 1: stereo master out, y-pinned to align with HostAudio2's
-        // Left/M and Right jack CENTERS. HostAudio uses createInput
-        // (top-left origin) with startY=73 and padding=29 (Cardinal
-        // ModuleWidgets.hpp); PJ301M is 23.7px tall so its centers land
-        // at y=73+11.85 and y=102+11.85. Same trick as Mixer8, so
-        // autopatch cables run straight across.
+        // Col 1 (RIGHT column): stereo master out, y-pinned to align with
+        // HostAudio2's Left/M and Right jack CENTERS. HostAudio uses
+        // createInput (top-left origin) with startY=73 and padding=29
+        // (Cardinal ModuleWidgets.hpp); PJ301M is 23.7px tall so its
+        // centers land at y=73+11.85 and y=102+11.85. Same trick as
+        // Mixer8, so the Auto-patch Host Audio cables run straight across
+        // to a HostAudio2 placed on Tracker's right.
         const float col1X = at(0, 1).x;
         const Vec outLPos = Vec(col1X, 73.f + 11.85f);
         const Vec outRPos = Vec(col1X, 102.f + 11.85f);
@@ -279,51 +306,34 @@ struct EnigmaCurryTrackerWidget : ModuleWidget {
         addOutput(createOutputCentered<PJ301MPort>(
             outRPos, module, EnigmaCurryTracker::OUT_R));
 
-        // Col 1 clock outputs: BPM CV + beat + bar + step triggers stacked
-        // below the L/R audio outs. Rows 4/5/7/9 keep even visual gaps
-        // (empty row 6 & 8) between adjacent ports without crowding the
-        // L/R block above.
-        const Vec bpmPos  = at(4, 1);
-        const Vec barPos  = at(5, 1);
-        const Vec beatPos = at(7, 1);
-        const Vec stepPos = at(9, 1);
-        addOutput(createOutputCentered<PJ301MPort>(
-            bpmPos,  module, EnigmaCurryTracker::OUT_BPM));
-        addOutput(createOutputCentered<PJ301MPort>(
-            barPos,  module, EnigmaCurryTracker::OUT_BAR));
-        addOutput(createOutputCentered<PJ301MPort>(
-            beatPos, module, EnigmaCurryTracker::OUT_BEAT));
-        addOutput(createOutputCentered<PJ301MPort>(
-            stepPos, module, EnigmaCurryTracker::OUT_STEP));
-
-        // Static labels — module name + jack tags. Run tag on
-        // black-transparent bg, Reset on red-transparent to signal the
-        // trigger nature (matches Latch/Transport reset styling). Clock
-        // triggers get the red-transparent bg for the same reason.
-        // Col-1 trigger labels are lowercase spelled-out words matching
-        // WebBridge's beat/bar/subdiv convention; they need a bigger x
-        // offset (-30 vs the -20 used for L/R/RUN/RST) to keep the
-        // rightmost pixel clear of the jack collar.
+        // Labels. Matched to WebBridge's convention throughout — same
+        // font size (10), same y-position (no baseline nudge, so text
+        // sits at the port's row centre exactly like WB), same bg-colour
+        // rule (red = input, black = output), same lowercase casing.
+        // The label x lands at 22.5 px, which is also WB's col-0 x
+        // (both grids place col-0 at the panel's 25% mark and Tracker's
+        // extra +15 shift is cancelled by the -30 label offset), so the
+        // two modules read as one visual system when placed adjacent.
         FramebufferWidget* buffer = new FramebufferWidget();
         DynamicOverlay* overlay = new DynamicOverlay(HP);
-        overlay->addText("Tracker", 18, Vec(mm2px(HP * HP_UNIT / 2), 25),
+        overlay->addText("Tracker", 14, Vec(mm2px(HP * HP_UNIT / 2), 14),
                          WHITE, CLEAR, MANROPE);
-        overlay->addText("RUN", 9, at(3, 0).plus(Vec(-20, 3)),
-                         WHITE, BLACK_TRANSPARENT);
-        overlay->addText("RST", 9, at(5, 0).plus(Vec(-20, 3)),
+        overlay->addText("reset", 10, at(1, 0).plus(Vec(-30, 0)),
                          WHITE, RED_TRANSPARENT);
-        overlay->addText("L", 10, outLPos.plus(Vec(-20, 3)),
-                         WHITE, BLACK_TRANSPARENT);
-        overlay->addText("R", 10, outRPos.plus(Vec(-20, 3)),
-                         WHITE, BLACK_TRANSPARENT);
-        overlay->addText("BPM",  9, bpmPos.plus(Vec(-30, 3)),
-                         WHITE, BLACK_TRANSPARENT);
-        overlay->addText("bar",  9, barPos.plus(Vec(-30, 3)),
+        overlay->addText("run",   10, at(2, 0).plus(Vec(-30, 0)),
                          WHITE, RED_TRANSPARENT);
-        overlay->addText("beat", 9, beatPos.plus(Vec(-30, 3)),
-                         WHITE, RED_TRANSPARENT);
-        overlay->addText("step", 9, stepPos.plus(Vec(-30, 3)),
-                         WHITE, RED_TRANSPARENT);
+        overlay->addText("bpm",   10, at(4, 0).plus(Vec(-30, 0)),
+                         WHITE, BLACK_TRANSPARENT);
+        overlay->addText("beat",  10, at(5, 0).plus(Vec(-30, 0)),
+                         WHITE, BLACK_TRANSPARENT);
+        overlay->addText("bar",   10, at(6, 0).plus(Vec(-30, 0)),
+                         WHITE, BLACK_TRANSPARENT);
+        overlay->addText("step",  10, at(7, 0).plus(Vec(-30, 0)),
+                         WHITE, BLACK_TRANSPARENT);
+        overlay->addText("L", 10, outLPos.plus(Vec(-20, 0)),
+                         WHITE, BLACK_TRANSPARENT);
+        overlay->addText("R", 10, outRPos.plus(Vec(-20, 0)),
+                         WHITE, BLACK_TRANSPARENT);
         buffer->addChild(overlay);
         addChild(buffer);
     }
